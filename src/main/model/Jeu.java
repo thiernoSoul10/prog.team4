@@ -302,7 +302,7 @@ public class Jeu {
     }
 
     private boolean tousLesPionsPlaces(){
-        return pions.size() == getNbPions(); 
+        return pions.size() == 0; 
     }
 
     //////////////////////////////pour l'affichage ////////////////////////////////////////
