@@ -68,5 +68,5 @@ public abstract class Joueur {
         fleursGagnees.clear();
     }
 
-    public abstract Coup choisirCoup(Game game);
+    //public abstract Coup choisirCoup(Game game);
 }

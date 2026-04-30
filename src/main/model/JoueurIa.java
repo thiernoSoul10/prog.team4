@@ -6,8 +6,5 @@ public class JoueurIa extends Joueur {
         super(nom, typePion);
     }
 
-    @Override
-    public Coup choisirCoup(Game game) {
-        return null;
-    }
+  
 }
