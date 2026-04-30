@@ -1,8 +1,8 @@
 import javax.swing.SwingUtilities;
 
 import global.Configuration;
-import Vue.InterfaceGraphique;
-import Vue.InterfaceTextuelle;
+import view.InterfaceGraphique;
+import view.InterfaceTextuelle;
 
 public class Lacuna {
 

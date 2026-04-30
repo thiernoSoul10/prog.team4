@@ -2,7 +2,7 @@ package view;
 
 import global.Configuration;
 import global.Coordonnees;
-import Model.Jeu;
+import model.Jeu;
 
 public class InterfaceTextuelle {
     public void lancer() {
