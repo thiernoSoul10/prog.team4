@@ -8,7 +8,7 @@ import global.Configuration;
 public class Jeu {
     private Cercle cercleDeJeu ;  // le cercle du jeu
     private ArrayList<Pion> pions; //contient tous les pions actuel  dans le cercle
-    private ArrayList<Fleur> fleurs; // contient toutes les fleurs dans le jeu
+    private ArrayList<Fleur> fleurs; 
 
     int nbPions = 12 ; // nombre de pions
     int nbFleurs = 49 ; // nombre de fleurs 
