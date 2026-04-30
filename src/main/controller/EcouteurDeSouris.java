@@ -12,6 +12,8 @@ public class EcouteurDeSouris extends MouseAdapter {
     @Override
     public void mousePressed(MouseEvent e) {
 
+
+
         
     }
 }

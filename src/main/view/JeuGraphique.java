@@ -19,9 +19,9 @@ public class JeuGraphique extends JComponent {
     public Jeu jeu;
     private int width = 660, height = 360;
     Coordonnees cercleDeJeu = new Coordonnees(width / 2, height / 2);
-    
 
-    // les images des fleurs et des pions seront chargées dans le constructeur de l'interface graphique 
+
+    // les images des fleurs et des pions seront chargées dans le constructeur de l'interface graphique
     private Image rougeImg, bleueImg, jauneImg, verteImg, orangeImg, violetteImg, roseImg;
     private Image orImg, argentImg;
     private Image plateauImg;
@@ -45,7 +45,7 @@ public class JeuGraphique extends JComponent {
             orangeImg = ImageIO.read(Configuration.ouvre("fleur_orange.png"));
             violetteImg = ImageIO.read(Configuration.ouvre("fleur_violette.png"));
             roseImg = ImageIO.read(Configuration.ouvre("fleur_rose.png"));
-            
+
             // Chargement des images des pions
             orImg = ImageIO.read(Configuration.ouvre("pion_or.png"));
             argentImg = ImageIO.read(Configuration.ouvre("pion_argent.png"));
@@ -105,7 +105,7 @@ public class JeuGraphique extends JComponent {
             if (img != null) {
                 g.drawImage(img, pion.getPosition().x, pion.getPosition().y, taille, taille, null);
             }
-        }   
+        }
     }
         */
 
@@ -119,8 +119,29 @@ public class JeuGraphique extends JComponent {
         double scaleX = getWidth() / 660.0;
         double scaleY = getHeight() / 360.0;
 
-        // Dessiner le plateau de jeu
-        g.drawImage(plateauImg, 0, 0, getWidth(), getHeight(), null);
+
+
+
+        int componentWidth = getWidth();
+        int componentHeight = getHeight();
+
+        int boardSize = Math.min(componentWidth, componentHeight);
+
+        int xOffset = (componentWidth - boardSize) / 2;
+        int yOffset = (componentHeight - boardSize) / 2;
+
+        // Centre du plateau affiché
+
+        int centerX = xOffset + boardSize / 2;
+        int centerY = yOffset + boardSize / 2;
+
+        // Rayon utilisable dans le cercle noir
+        double rayonMax = boardSize * 0.35;
+
+        g.drawImage(plateauImg, xOffset, yOffset, boardSize, boardSize, null);
+
+
+
 
         // Dessiner les fleurs avec mise à l'échelle
         for (Fleur fleur : fleurs) {
@@ -137,9 +158,11 @@ public class JeuGraphique extends JComponent {
                     default: break;
                 }
                 if (img != null) {
-                    int x = (int)(fleur.getPosition().x * scaleX);
-                    int y = (int)(fleur.getPosition().y * scaleY);
-                    g.drawImage(img, x, y, taille, taille, null);
+                    double relX = (fleur.getPosition().x / 660.0) - 0.5;
+                    double relY = (fleur.getPosition().y / 360.0) - 0.5;
+                    int x = (int)(centerX + relX * 2 * rayonMax);
+                    int y = (int)(centerY + relY * 2 * rayonMax);
+                    g.drawImage(img, x - taille/2, y - taille/2, taille, taille, null);
                 }
             }
         }
@@ -153,10 +176,12 @@ public class JeuGraphique extends JComponent {
                 default: break;
             }
             if (img != null) {
-                int x = (int)(pion.getPosition().x * scaleX);
-                int y = (int)(pion.getPosition().y * scaleY);
-                g.drawImage(img, x, y, taille, taille, null);
+                double relX = (pion.getPosition().x / 660.0) - 0.5;
+                double relY = (pion.getPosition().y / 360.0) - 0.5;
+                int x = (int)(centerX + relX * 2 * rayonMax);
+                int y = (int)(centerY + relY * 2 * rayonMax);
+                g.drawImage(img, x - taille/2, y - taille/2, taille, taille, null);
             }
-        }   
+        }
     }
 }
