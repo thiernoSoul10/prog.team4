@@ -1,4 +1,4 @@
-package Vue;
+package view;
 
 import java.awt.Graphics;
 import java.awt.Image;
@@ -8,11 +8,11 @@ import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 
-import Global.Configuration;
-import Global.Coordonnees;
-import Model.Fleur;
-import Model.Jeu;
-import Model.Pion;
+import global.Configuration;
+import global.Coordonnees;
+import model.Fleur;
+import model.Jeu;
+import model.Pion;
 
 public class JeuGraphique extends JComponent {
     private JFrame frame;

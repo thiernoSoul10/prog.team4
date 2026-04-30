@@ -1,10 +1,10 @@
-package Global;
+package global;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 public final class Configuration {
-    private static String PATH = "Images";
+    private static String PATH = "res/images";
     private static boolean debug = true; // tous les messages sont affichés si vrai
     private static boolean debugError = true;
     public enum Mode {GRAPHIQUE, TEXTUEL }

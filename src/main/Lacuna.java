@@ -1,6 +1,6 @@
 import javax.swing.SwingUtilities;
 
-import Global.Configuration;
+import global.Configuration;
 import Vue.InterfaceGraphique;
 import Vue.InterfaceTextuelle;
 

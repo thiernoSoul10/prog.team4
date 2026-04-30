@@ -1,4 +1,4 @@
-package Model;
+package model;
 
 public final class Types {
     public enum TypeFleur {

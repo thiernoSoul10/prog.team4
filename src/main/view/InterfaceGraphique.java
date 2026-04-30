@@ -1,4 +1,4 @@
-package Vue;
+package view;
 
 import javax.swing.*;
 

@@ -1,7 +1,7 @@
-package Vue;
+package view;
 
-import Global.Configuration;
-import Global.Coordonnees;
+import global.Configuration;
+import global.Coordonnees;
 import Model.Jeu;
 
 public class InterfaceTextuelle {

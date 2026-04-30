@@ -1,6 +1,6 @@
-package Model;
+package model;
 
-import Global.Coordonnees;
+import global.Coordonnees;
 
 public class Fleur {
     private Types.TypeFleur type; // Type de la fleur ne jamais modifié après la création

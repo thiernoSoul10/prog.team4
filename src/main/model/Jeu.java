@@ -1,10 +1,10 @@
-package Model;
+package model;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-import Global.Configuration;
-import Global.Coordonnees;
+import global.Configuration;
+import global.Coordonnees;
 
 public class Jeu {
     private ArrayList<Pion> pions;

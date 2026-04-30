@@ -1,9 +1,9 @@
-package Controleur;
+package controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
-import Global.Configuration;
+import global.Configuration;
 
 public class EcouteurDeClavier extends KeyAdapter {
 

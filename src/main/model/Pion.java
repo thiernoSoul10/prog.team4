@@ -1,6 +1,7 @@
-package Model;
+package model;
 
-import Global.Coordonnees;
+import global.Coordonnees;
+
 
 public class Pion {
     private Types.TypePion type;
