@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import global.Configuration;
-import global.Coordonnees;
+
 
 public class Jeu {
     private ArrayList<Pion> pions;

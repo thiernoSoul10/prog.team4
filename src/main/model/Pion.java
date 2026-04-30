@@ -1,6 +1,6 @@
 package model;
 
-import global.Coordonnees;
+
 
 
 public class Pion {
