@@ -39,10 +39,6 @@ public class EcouteurDeSouris extends MouseAdapter {
 
             return;
         }
-        if (game.toucherFleur(modelPos)) {
-            jeuGraphique.repaint();
-            return;
-        }
 
         
         if (game.fleursConnectées(game.getFleurSelectionnee1(), game.getFleurSelectionnee2())) {

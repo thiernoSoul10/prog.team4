@@ -146,8 +146,8 @@ public class Jeu {
             double margeFleur = 20; // pour ne pas déborder
             double r = Math.sqrt(Math.random()) * (cercleDeJeu.getRayon() - margeFleur);
 
-            double x = cercleDeJeu.getCentre().getX() + r * Math.cos(angle); 
-            double y = cercleDeJeu.getCentre().getY() + r * Math.sin(angle); 
+            double x = cercleDeJeu.getCentre().getX() + r * Math.cos(angle);
+            double y = cercleDeJeu.getCentre().getY() + r * Math.sin(angle);
             pos = new Coordonnees((int) x, (int) y);
 
         } while (!positionValide(pos, fleurs));
@@ -230,11 +230,13 @@ public class Jeu {
     // on verifie si la position où on place le pion est libre
     private boolean positionLibrePourPion(Coordonnees pos) {
         // on verifie qu'il y a une distance avec toutes les fleurs
-      /*   for (Fleur f : fleurs) {
-            if (distance(pos, f.getPosition()) < DIST_MIN_FLEURS) {
-                return false;
-            }
-        } */
+        /*
+         * for (Fleur f : fleurs) {
+         * if (distance(pos, f.getPosition()) < DIST_MIN_FLEURS) {
+         * return false;
+         * }
+         * }
+         */
         // on verifie qu'il y a une distance aussi avec les pions
         for (Pion p : pions) {
             if (p.getPosition() != null && distance(pos, p.getPosition()) < DIST_MIN_FLEURS) {
@@ -398,31 +400,49 @@ public class Jeu {
         int x = C.getX();
         int y = C.getY();
 
-        // 1. alignement (produit vectoriel)
-        int det = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1);
+        // 1. Calcul de la distance du point C au segment [AB]
+        // det est le double de l'aire du triangle ABC
+        long det = Math.abs((long) (x2 - x1) * (y - y1) - (long) (y2 - y1) * (x - x1));
+        double distAB = distance(A, B);
 
-        if (Math.abs(det) > 5)
-            return false; // tolérance
+        if (distAB == 0)
+            return false;
 
-        // 2. vérifier que C est entre A et B
-        boolean entreX = (x >= Math.min(x1, x2) && x <= Math.max(x1, x2));
-        boolean entreY = (y >= Math.min(y1, y2) && y <= Math.max(y1, y2));
+        // Seuil de collision (environ 12 pixels pour le rayon d'une fleur/pion)
+        double distanceC_AB = det / distAB;
+        if (distanceC_AB > 12)
+            return false;
 
-        return entreX && entreY;
+        // 2. Vérification que C est bien entre A et B
+        int marge = 5;
+        return x >= Math.min(x1, x2) - marge && x <= Math.max(x1, x2) + marge
+                && y >= Math.min(y1, y2) - marge && y <= Math.max(y1, y2) + marge;
     }
 
     private boolean segmentLibre(Coordonnees A, Coordonnees B) {
 
+        // Vérifier les fleurs comme obstacles
         for (Fleur f : fleurs) {
 
             Coordonnees C = f.getPosition();
 
-            // ignorer les extrémités
+            // ignorer les extrémités (les fleurs sélectionnées)
             if (C.equals(A) || C.equals(B))
                 continue;
 
             if (surSegment(A, B, C)) {
                 return false; // obstacle trouvé
+            }
+        }
+
+        // Vérifier les pions comme obstacles
+        for (Pion p : pions) {
+            Coordonnees C = p.getPosition();
+            if (C == null)
+                continue;
+
+            if (surSegment(A, B, C)) {
+                return false; // un pion bloque le chemin
             }
         }
 
