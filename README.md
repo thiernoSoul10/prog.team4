@@ -1,8 +1,22 @@
 # Lacuna
+
 Jeu Lacuna avec implémentation IA
 
-# Compilation
-Lancer ./src/compile.sh
+## Compilation
+
+placer vous dans le repertoire "main_files"
+
+Donnez le droit d'execution au fichier compile.sh
+
+Lancer le fichier compile.sh (il fait la compilation )
+
+pour lancer il suffit de taper la commande :
+
+```
+java -cp bin main.Lacuna
+```
+
+ou lancer le fichier run.sh en lui donnant les droit d'execution
 
 # A faire 
 
