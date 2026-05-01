@@ -33,13 +33,16 @@ public class JeuGraphique extends JComponent {
 
     public JeuGraphique(JFrame frame) {
         this.frame = frame;
-        // width = frame.getWidth();
-        //  height = frame.getHeight();
+        //width = frame.getWidth();
+        //height = frame.getHeight();
 
-        int boardSize = Math.min(width, height); 
+        int boardSize = Math.min(width , height); 
+        
         int cx = width / 2;                      
-        int cy = height / 2;                     
-        int rayon = (int)(boardSize * 0.30);     
+        int cy = height / 2; 
+                          
+        int rayon = (int)(boardSize * 0.35);
+           
         this.jeu = new Jeu(660, 360, new Cercle(new Coordonnees(cx, cy), rayon));
 
         setFocusable(true);
@@ -124,7 +127,7 @@ public class JeuGraphique extends JComponent {
     public void paintComponent(Graphics g) {
         ArrayList<Pion> pions = jeu.getPions();
         ArrayList<Fleur> fleurs = jeu.getFleurs();
-        int taille = 40;
+         
 
         // Facteurs de mise à l'échelle
         double scaleX = getWidth() / 660.0;
@@ -137,7 +140,7 @@ public class JeuGraphique extends JComponent {
         int componentHeight = getHeight();
 
         int boardSize = Math.min(componentWidth, componentHeight);
-
+        int taille = (int)(boardSize*0.05); // taille des fleures relative à la taille du plateau
         int xOffset = (componentWidth - boardSize) / 2;
         int yOffset = (componentHeight - boardSize) / 2;
 

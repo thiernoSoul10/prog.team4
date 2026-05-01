@@ -13,7 +13,7 @@ public class Jeu {
     int nbPions = 12 ; // nombre de pions
     int nbFleurs = 49 ; // nombre de fleurs 
 
-    private static final double DIST_MIN_FLEURS = 20; // distance min entre les fleurs 
+    private static final double DIST_MIN_FLEURS = 20; // distance min entre les fleurs: 40 au lieu de 20 ?
     private static final int  NB_JOUEURS = 2; 
     
 
@@ -24,8 +24,8 @@ public class Jeu {
 
     private Random random;
 
-    private int WIDTH = 20;
-    private int HEIGHT = 20;
+    private int WIDTH = 30;
+    private int HEIGHT = 30;
 
     public boolean againstIA = false;
 
