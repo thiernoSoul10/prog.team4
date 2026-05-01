@@ -24,8 +24,8 @@ public class Jeu {
 
     private Random random;
 
-    private int WIDTH = 30;
-    private int HEIGHT = 30;
+    private int WIDTH = 20;
+    private int HEIGHT = 20;
 
     public boolean againstIA = false;
 
