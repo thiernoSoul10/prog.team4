@@ -2,9 +2,11 @@ package controller;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+//import model.ActionJeu;
 
 import view.JeuGraphique;
 import model.*;
+import model.Jeu.ActionJeu;
 
 public class EcouteurDeSouris extends MouseAdapter {
     private Jeu game;
@@ -59,6 +61,8 @@ public class EcouteurDeSouris extends MouseAdapter {
             if (this.game.placePion(newPion, pos)) {
                 this.game.getPions().add(newPion);
                 this.game.mangerFleurs(joueurActuel, this.game.getFleurSelectionnee1(), this.game.getFleurSelectionnee2());
+                this.game.undoStack.push(new ActionJeu(newPion, this.game.getFleurSelectionnee1(), this.game.getFleurSelectionnee2(), joueurActuel));
+                this.game.redoStack.clear();
                 this.game.joueurSuivant();
 
                 // reset sélection après coup

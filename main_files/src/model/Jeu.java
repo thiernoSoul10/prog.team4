@@ -36,15 +36,19 @@ public class Jeu {
     public Stack<ActionJeu> undoStack = new Stack<>();
     public Stack<ActionJeu> redoStack = new Stack<ActionJeu>();
 
-    class ActionJeu {// pour l'undo redo
+    public static class ActionJeu {// pour l'undo redo
         Pion pion;
+        Coordonnees position;
         Fleur f1;
         Fleur f2;
+        Joueur joueur;
 
-        public ActionJeu(Pion pion, Fleur f1, Fleur f2) {
+        public ActionJeu(Pion pion, Fleur f1, Fleur f2, Joueur joueur) {
             this.pion = pion;
+            this.position = pion.getPosition();
             this.f1 = f1;
             this.f2 = f2;
+            this.joueur = joueur;
         }
     }
 
@@ -523,6 +527,52 @@ public class Jeu {
     public void resetFleursSelectionnee2() {
         fleurSelectionnee2 = null;
 
+    }
+
+    public void undo(){
+        if(!this.undoStack.isEmpty()){
+            ActionJeu action = this.undoStack.pop();
+            // Annuler l'action
+            action.pion.setPosition(null); // Retirer le pion du plateau
+            if (action.f1 != null) {
+                action.joueur.getFleursGagnees().remove(action.f1); // Retirer la fleur du joueur
+                fleurs.add(action.f1); // Remettre la fleur sur le plateau
+            }
+            if (action.f2 != null) {
+                action.joueur.getFleursGagnees().remove(action.f2); // Retirer la fleur du joueur
+                fleurs.add(action.f2); // Remettre la fleur sur le plateau
+            }
+            this.redoStack.push(action); // Ajouter l'action annulée à la pile de redo
+        }
+    }
+
+    public void redo(){
+        if(!this.redoStack.isEmpty()){
+            ActionJeu action = this.redoStack.pop();
+            // Refaire l'action
+            if (placePion(action.pion, action.position)) { // Replacer le pion à la position sauvegardée
+                if (action.f1 != null) {
+                    action.joueur.ajouterFleur(action.f1); // Retirer la fleur du plateau et la donner au joueur
+                    fleurs.remove(action.f1);
+                }
+                if (action.f2 != null) {
+                    action.joueur.ajouterFleur(action.f2); // Retirer la fleur du plateau et la donner au joueur
+                    fleurs.remove(action.f2);
+                }
+                this.undoStack.push(action); // Ajouter l'action refaite à la pile d'undo
+            } else {
+                System.out.println("Impossible de refaire l'action : placement du pion invalide.");
+            }
+        }
+    }
+
+    public void reset() {
+        // Réinitialiser le jeu à son état initial
+        initPlayers();
+        initFleurs();
+        initPions();
+        undoStack.clear();
+        redoStack.clear();
     }
 
     /*

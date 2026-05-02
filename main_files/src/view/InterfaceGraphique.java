@@ -14,8 +14,30 @@ public class InterfaceGraphique implements Runnable {
         frame = new JFrame("LACUNA");
 
         JeuGraphique aire = new JeuGraphique(frame);
+        JButton redoButton = new JButton("Redo");
+        JButton undoButton = new JButton("Undo");
+        JButton resetButton = new JButton("Reset");
+        JPanel buttonPanel = new JPanel();
+        redoButton.addActionListener(e -> {
+            aire.jeu.redo();
+            aire.repaint();
+        });
+        undoButton.addActionListener(e -> {
+            aire.jeu.undo();
+            aire.repaint();
+
+        });
+        resetButton.addActionListener(e ->{
+            aire.jeu.reset();
+            aire.repaint();
+        });
+        buttonPanel.add(undoButton);
+        buttonPanel.add(redoButton);
+        buttonPanel.add(resetButton);
+        frame.add(buttonPanel, BorderLayout.NORTH);
+        frame.add(aire, BorderLayout.CENTER);
         // Ajout de notre composant de dessin dans la fenetre
-        frame.add(aire);
+        // frame.add(aire);
 
         // Ecoute des évènements liés à la souris dans l'AireDeDessin
         // aire.addMouseListener(new EcouteurDeSouris(aire));
