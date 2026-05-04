@@ -85,22 +85,19 @@ public class PionArgent extends JComponent {
         int width = getWidth();
         int height = getHeight();
 
-        // Taille des pions (responsive)
         int gap = 10;
         int maxPossibleSizeByHeight = (height - (nbPions + 1) * gap) / nbPions;
         int maxPossibleSizeByWidth = (int) (width * 0.35);
 
         int size = Math.min(maxPossibleSizeByHeight, maxPossibleSizeByWidth);
         if (size <= 0)
-            size = 10; // Sécurité
+            size = 10; 
 
-        // Hauteur totale du bloc
         int totalHeight = nbPions * size + (nbPions - 1) * gap;
 
-        // Centrage vertical
+       
         int startY = (height - totalHeight) / 2;
 
-        // Alignement à DROITE (proche du centre car PionArgent est à gauche du centre)
         int startX = width - size - 10;
 
         zonesPions.clear();
@@ -112,7 +109,7 @@ public class PionArgent extends JComponent {
 
             zonesPions.add(new Rectangle(x, y, size, size));
 
-            // si on est en train de drag ce pion → on ne le dessine pas ici
+           
             if (dragging && i == draggedIndex)
                 continue;
 

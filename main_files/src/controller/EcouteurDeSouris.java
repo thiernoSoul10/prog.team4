@@ -83,7 +83,7 @@ public class EcouteurDeSouris extends MouseAdapter {
                 game.resetFleursSelectionnee1();
                 game.resetFleursSelectionnee2();
 
-                // ✅ MAJ SCORE AU BON MOMENT
+             
                 jeuGraphique.refreshScores();
 
                 jeuGraphique.repaint();
