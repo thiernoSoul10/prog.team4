@@ -18,7 +18,7 @@ public class Jeu {
     int nbPions = 12; // nombre de pions
     int nbFleurs = 49; // nombre de fleurs
 
-    private static final double DIST_MIN_FLEURS = 20; // distance min entre les fleurs
+    private static final double DIST_MIN_FLEURS = 30; // distance min entre les fleurs
     private static final int NB_JOUEURS = 2;
     private static final int MAX_PIONS_PAR_JOUEUR = 6;
 
@@ -28,10 +28,19 @@ public class Jeu {
 
     private Random random;
 
+
     private int WIDTH = 30;
     private int HEIGHT = 30;
 
     public boolean againstIA = false;
+
+    ///////// pour la marge (afin que les fleurs ne sortent pas du cercle)//////////
+    ////////// vu qu'on dessine les fleurs avec le format dans view (hauteur * largeur )
+    ///////// avec hauteur == largeur, alors la view va nous envoyer la taille qu'on divisera par 2
+    ///////// voir dans jeuGraphique, juste après rcalcul de la taille, on fera setMarge(taille/2)
+    
+    private double marge;
+
 
     // pour l'undo redo
     public Stack<ActionJeu> undoStack = new Stack<>();
@@ -41,6 +50,11 @@ public class Jeu {
     private boolean avantageInitialApplique = false;
     private boolean enPhaseSelectionAvantage = false;
 
+    // Avantage du joueur qui commence
+    private boolean avantageInitialApplique = false;
+    private boolean enPhaseSelectionAvantage = false;
+
+    ////////// la classe ActionJeu //////////////////
     public static class ActionJeu {// pour l'undo redo
         Pion pion;
         Coordonnees position;
@@ -85,6 +99,9 @@ public class Jeu {
 
     //////////////////////////////////// GETTERS ET SETTERS METHODES
     //////////////////////////////////// /////////////////////////////////////////
+    public void setMarge(double marge){
+        this.marge = marge;
+    }
 
     public Cercle getCercleDeJeu() {
         return cercleDeJeu;
@@ -150,7 +167,7 @@ public class Jeu {
         }
     }
 
-    ////////////////// initialisatin des fleurs////////////////////////////////////
+    ////////////////// initialisatin des fleurs et pions////////////////////////////////////
     public void initFleurs() {
         fleurs.clear();
 
@@ -192,6 +209,26 @@ public class Jeu {
         }
     }
 
+    private void demarrerPhaseSelectionAvantage() {
+        enPhaseSelectionAvantage = true;
+        System.out.println("Phase d'avantage initial: " + getJoueurActuel().getNom() + " doit choisir une fleur");
+    }
+
+    public void appliquerAvantageAvecFleur(Fleur fleurChoisie) {
+        if (enPhaseSelectionAvantage && !avantageInitialApplique && fleurs.contains(fleurChoisie)) {
+            // Donner cette fleur au joueur qui commence
+            Joueur joueurCommence = getJoueurActuel();
+            joueurCommence.ajouterFleur(fleurChoisie);
+            fleurs.remove(fleurChoisie);
+
+            avantageInitialApplique = true;
+            enPhaseSelectionAvantage = false;
+
+            System.out.println("Avantage initial: " + joueurCommence.getNom() + " choisit une fleur " + fleurChoisie.getType());
+        }
+    }
+
+    // Le nombre de pions par type placés dans le cercle 
     private int nombreDePionsPlacees(Types.TypePion type) {
         int compteur = 0;
         for (Pion p : pions) {
@@ -202,17 +239,19 @@ public class Jeu {
         return compteur;
     }
 
+    // si on peut placer un pion d'un certain type(or ou argent) dans le cercle
     private boolean peutPlacerPionDeType(Types.TypePion type) {
         return nombreDePionsPlacees(type) < MAX_PIONS_PAR_JOUEUR;
     }
 
+    // Génération de position aleatoire pour les fleurs
     private Coordonnees genererPositionAleatoire(ArrayList<Fleur> fleurs) {
         Coordonnees pos;
 
         do {
             double angle = Math.random() * 2 * Math.PI;
-            double margeFleur = 20; // pour ne pas déborder
-            double r = Math.sqrt(Math.random()) * (cercleDeJeu.getRayon() - margeFleur);
+            double margeFleur = marge ; // pour ne pas déborder
+            double r = Math.sqrt(Math.random()) * (cercleDeJeu.getRayon()-margeFleur);
 
             double x = cercleDeJeu.getCentre().getX() + r * Math.cos(angle);
             double y = cercleDeJeu.getCentre().getY() + r * Math.sin(angle);
@@ -223,6 +262,7 @@ public class Jeu {
         return pos;
     }
 
+    // Si la position pour mettre les fleurs est valide
     private boolean positionValide(Coordonnees pos, ArrayList<Fleur> fleurs) {
         for (Fleur f : fleurs) {
             if (distance(pos, f.getPosition()) < DIST_MIN_FLEURS) {
@@ -232,6 +272,7 @@ public class Jeu {
         return true;
     }
 
+    // dist entre deux points de coordonnes 
     private double distance(Coordonnees a, Coordonnees b) {
         double dx = a.getX() - b.getX();
         double dy = a.getY() - b.getY();
@@ -340,7 +381,7 @@ public class Jeu {
         return true;
     }
 
-    // attribuer les fleurs restantes ( après avoir jouer , il se peut que le joueur
+    // attribuer les fleurs restantes ( après avoir joué , il se peut que le joueur
     // suivant ai 2 fleurs)
     // qui sont proche de lui, car des obstacles ont disparus sur le plateau, si on
     // peut dire comme ça )
@@ -384,8 +425,13 @@ public class Jeu {
         return null;
     }
 
+    // verifie si tous les pions sont placés (type argent et or )
     private boolean tousLesPionsPlaces() {
-        return pions.size() == 0;
+        for (Pion p : pions){
+            // le pion n'a pas de coordonnée, donc il n'est pas placé dans le plateau de jeu
+            if(p.getPosition()==null) return false ;
+        }
+        return true;
     }
 
     ////////////////////////////// pour l'affichage
@@ -572,18 +618,18 @@ public class Jeu {
 
     public Map<Types.TypeFleur, Integer> getScore(Joueur joueur) {
 
-    Map<Types.TypeFleur, Integer> map = new java.util.HashMap<>();
+        Map<Types.TypeFleur, Integer> map = new java.util.HashMap<>();
 
-    for (Types.TypeFleur t : Types.TypeFleur.values()) {
-        map.put(t, 0);
+        for (Types.TypeFleur t : Types.TypeFleur.values()) {
+            map.put(t, 0);
+        }
+
+        for (Fleur f : joueur.getFleursGagnees()) {
+            map.put(f.getType(), map.get(f.getType()) + 1);
+        }
+
+        return map;
     }
-
-    for (Fleur f : joueur.getFleursGagnees()) {
-        map.put(f.getType(), map.get(f.getType()) + 1);
-    }
-
-    return map;
-}
     public void undo(){
         if(!this.undoStack.isEmpty()){
             ActionJeu action = this.undoStack.pop();

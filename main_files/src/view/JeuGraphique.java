@@ -182,16 +182,26 @@ public class JeuGraphique extends JComponent {
     }
 
     public void paintComponent(Graphics g) {
-        ArrayList<Pion> pions = jeu.getPions();
-        ArrayList<Fleur> fleurs = jeu.getFleurs();
-        g.setColor(getBackground());
-        g.fillRect(0, 0, getWidth(), getHeight());
-
         int componentWidth = getWidth();
         int componentHeight = getHeight();
 
         int boardSize = Math.min(componentWidth, componentHeight);
-        int taille = (int) (boardSize * 0.05); // taille des fleures relative à la taille du plateau
+        int taille = (int) (boardSize * 0.05); // taille des fleures relative à la taille du plateau (5% du plateau)
+        
+        // envoyer au modele la marge des fleurs
+        jeu.setMarge( (double) (taille / 2) );
+        
+        //recupérer la liste des pions et des fleurs 
+        
+        ArrayList<Pion> pions = jeu.getPions();
+        ArrayList<Fleur> fleurs = jeu.getFleurs();
+        /////////////////////////////////////
+
+        g.setColor(getBackground());
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+       
+        
         int xOffset = (componentWidth - boardSize) / 2;
         int yOffset = (componentHeight - boardSize) / 2;
 
@@ -199,7 +209,7 @@ public class JeuGraphique extends JComponent {
         int centerY = yOffset + boardSize / 2;
 
         // Rayon utilisable dans le cercle noir
-        double rayonMax = boardSize * 0.35;
+        double rayonMax = boardSize * 0.4;
 
         g.drawImage(plateauImg, xOffset, yOffset, boardSize, boardSize, null);
 
@@ -258,44 +268,27 @@ public class JeuGraphique extends JComponent {
         if (f1 != null && f1.getPosition() != null) {
             Coordonnees pos1 = modelToScreen(f1.getPosition().x, f1.getPosition().y);
 
-            g2.drawRoundRect(
-                    pos1.getX() - size / 2,
-                    pos1.getY() - size / 2, size,
-                    size,
-                    15,
-                    15);
+            g2.drawRoundRect(pos1.getX() - size / 2, pos1.getY() - size / 2, size, size, 15, 15);
         }
 
         if (f2 != null && f2.getPosition() != null) {
             Coordonnees pos2 = modelToScreen(f2.getPosition().x, f2.getPosition().y);
 
-            g2.drawRoundRect(
-                    pos2.getX() - size / 2,
-                    pos2.getY() - size / 2,
-                    size,
-                    size,
-                    15,
-                    15);
+            g2.drawRoundRect(pos2.getX() - size / 2, pos2.getY() - size / 2, size, size, 15, 15);
         }
 
         // aligner les fleurs sélectionnées
 
         if (f1 != null && f2 != null && jeu.fleursConnectées(f1, f2)) {
 
-            Coordonnees p1 = modelToScreen(
-                    f1.getPosition().getX(),
-                    f1.getPosition().getY());
+            Coordonnees p1 = modelToScreen(  f1.getPosition().getX(),f1.getPosition().getY());
 
-            Coordonnees p2 = modelToScreen(
-                    f2.getPosition().getX(),
-                    f2.getPosition().getY());
+            Coordonnees p2 = modelToScreen( f2.getPosition().getX(),f2.getPosition().getY());
 
             g2.setColor(Color.YELLOW);
             g2.setStroke(new BasicStroke(3));
 
-            g2.drawLine(
-                    p1.getX(), p1.getY(),
-                    p2.getX(), p2.getY());
+            g2.drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
         }
         // Dessiner les pions avec mise à l'échelle
         for (Pion pion : pions) {
