@@ -62,11 +62,24 @@ public class Jeu {
 
         public ActionJeu(Pion pion, Fleur f1, Fleur f2, Joueur joueur) {
             this.pion = pion;
-            this.position = pion.getPosition();
+            this.position = pion.getPosition() != null ? new Coordonnees(pion.getPosition().getX(), pion.getPosition().getY()) : null;
             this.f1 = f1;
             this.f2 = f2;
             this.joueur = joueur;
         }
+    }
+
+    public Pion getPionLibre(Types.TypePion type) {
+        for (Pion p : pions) {
+            if (p.getType() == type && p.getPosition() == null) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    public void joueurPrecedent() {
+        currentPlayerIndex = (currentPlayerIndex - 1 + NB_JOUEURS) % NB_JOUEURS;
     }
 
     public Jeu(int WIDTH, int HEIGHT, Cercle cercleDeJeu) {
@@ -638,6 +651,7 @@ public class Jeu {
                 action.joueur.getFleursGagnees().remove(action.f2); // Retirer la fleur du joueur
                 fleurs.add(action.f2); // Remettre la fleur sur le plateau
             }
+            joueurPrecedent();
             this.redoStack.push(action); // Ajouter l'action annulée à la pile de redo
         }
     }
@@ -655,6 +669,7 @@ public class Jeu {
                     action.joueur.ajouterFleur(action.f2); // Retirer la fleur du plateau et la donner au joueur
                     fleurs.remove(action.f2);
                 }
+                joueurSuivant();
                 this.undoStack.push(action); // Ajouter l'action refaite à la pile d'undo
             } else {
                 System.out.println("Impossible de refaire l'action : placement du pion invalide.");
@@ -664,6 +679,8 @@ public class Jeu {
 
     public void reset() {
         // Réinitialiser le jeu à son état initial
+        avantageInitialApplique = false;
+        enPhaseSelectionAvantage = false;
         initPlayers();
         initFleurs();
         initPions();

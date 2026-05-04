@@ -48,27 +48,25 @@ public class EcouteurDeSouris extends MouseAdapter {
                     game.getFleurSelectionnee2().getPosition());
 
             Joueur joueurActuel = game.getJoueurActuel();
-            Pion newPion;
+            Types.TypePion pionType = game.currentPlayerIndex == 0 ? Types.TypePion.OR : Types.TypePion.ARGENT;
+            Pion pionLibre = game.getPionLibre(pionType);
 
-            if (game.currentPlayerIndex == 0) {
-                newPion = new Pion(Types.TypePion.OR, pos);
-            } else {
-                newPion = new Pion(Types.TypePion.ARGENT, pos);
+            if (pionLibre == null) {
+                System.out.println("Aucun pion libre disponible pour ce joueur.");
+                return;
             }
 
             // Placement du pion
-            if (game.placePion(newPion, pos)) {
+            if (game.placePion(pionLibre, pos)) {
 
-                game.getPions().add(newPion);
-
-                // ✅ UN SEUL appel ici
+                // UN SEUL appel ici
                 game.mangerFleurs(
                         joueurActuel,
                         game.getFleurSelectionnee1(),
                         game.getFleurSelectionnee2());
 
                 game.undoStack.push(new ActionJeu(
-                        newPion,
+                        pionLibre,
                         game.getFleurSelectionnee1(),
                         game.getFleurSelectionnee2(),
                         joueurActuel));
@@ -82,6 +80,7 @@ public class EcouteurDeSouris extends MouseAdapter {
                 game.resetFleursSelectionnee2();
 
              
+                //  MAJ SCORE AU BON MOMENT
                 jeuGraphique.refreshScores();
 
                 jeuGraphique.repaint();
