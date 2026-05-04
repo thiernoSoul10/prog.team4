@@ -46,7 +46,9 @@ public class Coordonnees implements Comparable<Coordonnees> {
 
     @Override
     public int compareTo(Coordonnees arg0) {
-        // TODO Auto-generated method stub
-        return 0;
+        if (this.x != arg0.x) {
+            return Integer.compare(this.x, arg0.x);
+        }
+        return Integer.compare(this.y, arg0.y);
     }
 }
