@@ -92,7 +92,7 @@ public class PionArgent extends JComponent {
 
         int size = Math.min(maxPossibleSizeByHeight, maxPossibleSizeByWidth);
         if (size <= 0)
-            size = 10; // Sécurité
+            size = 10; //Sécurité
 
         // Hauteur totale du bloc
         int totalHeight = nbPions * size + (nbPions - 1) * gap;
@@ -112,7 +112,7 @@ public class PionArgent extends JComponent {
 
             zonesPions.add(new Rectangle(x, y, size, size));
 
-            // si on est en train de drag ce pion → on ne le dessine pas ici
+            // si on est en train de drag ce pion on ne le dessine pas ici
             if (dragging && i == draggedIndex)
                 continue;
 

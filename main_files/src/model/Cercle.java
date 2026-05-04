@@ -4,7 +4,7 @@ public class Cercle {
     
     private  Coordonnees centre;
     private int rayon;
-    double echelle = 0.5; // échelle de 1:1 par défaut   
+    double echelle = 0.5; // échelle    
 
     //CONSTRUCTEUR////
 
@@ -60,15 +60,15 @@ public class Cercle {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    // verifie si le cercle contient un point de coordonnes P
+    // Vérifie si le cercle contient un point de coordonnes P
     //attention: on suppose ici que si le point est sur la circonference 
-    //alors il n'appartient pas au cercle ( c'est pour celà on a mis < et non <= )
+    //alors il n'appartient au cercle ( c'est pour celà on a mis <=  et non < )
     public boolean contientPoint(Coordonnees p){
         return distanceAuCentre(p) <= rayon ;
     }
 
-    //cette methode permet de copier le cercle actuel (je suppose qu'elle nous aidera peut être pour le future)
-    //je l'ai rajouté par intuition ( à l'équipe de voir)
+    // Cette methode permet de copier le cercle actuel (je suppose qu'elle nous aidera peut être pour le future)
+    // je l'ai rajouté par intuition ( à l'équipe de voir)
     public Cercle copie(){
         return new Cercle(centre , rayon );
     }
