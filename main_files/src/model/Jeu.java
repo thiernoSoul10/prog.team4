@@ -18,7 +18,7 @@ public class Jeu {
     int nbPions = 12; // nombre de pions
     int nbFleurs = 49; // nombre de fleurs
 
-    private static final double DIST_MIN_FLEURS = 20; // distance min entre les fleurs
+    private static final double DIST_MIN_FLEURS = 30; // distance min entre les fleurs
     private static final int NB_JOUEURS = 2;
     private static final int MAX_PIONS_PAR_JOUEUR = 6;
 
@@ -37,6 +37,7 @@ public class Jeu {
     public Stack<ActionJeu> undoStack = new Stack<>();
     public Stack<ActionJeu> redoStack = new Stack<ActionJeu>();
 
+    ////////// la classe ActionJeu //////////////////
     public static class ActionJeu {// pour l'undo redo
         Pion pion;
         Coordonnees position;
