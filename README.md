@@ -40,4 +40,4 @@ ou lancer le fichier run.sh en lui donnant les droit d'execution
 # Layan
 
 - S'organiser avec Faycal pour le controleur souris
-- ???? Undo/redo/reset ?????
+- Undo/redo/reset 

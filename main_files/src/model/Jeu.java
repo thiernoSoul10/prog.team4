@@ -3,6 +3,7 @@ package model;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
+import java.util.Stack;
 
 import global.Configuration;
 
@@ -19,6 +20,7 @@ public class Jeu {
 
     private static final double DIST_MIN_FLEURS = 20; // distance min entre les fleurs
     private static final int NB_JOUEURS = 2;
+    private static final int MAX_PIONS_PAR_JOUEUR = 6;
 
     //// Attributs pour les joueurs
     private Joueur[] joueurs; // la liste des joueurs
@@ -31,7 +33,26 @@ public class Jeu {
 
     public boolean againstIA = false;
 
-    ////// CONSTRUCTEUR //////////////////////////////
+    // pour l'undo redo
+    public Stack<ActionJeu> undoStack = new Stack<>();
+    public Stack<ActionJeu> redoStack = new Stack<ActionJeu>();
+
+    public static class ActionJeu {// pour l'undo redo
+        Pion pion;
+        Coordonnees position;
+        Fleur f1;
+        Fleur f2;
+        Joueur joueur;
+
+        public ActionJeu(Pion pion, Fleur f1, Fleur f2, Joueur joueur) {
+            this.pion = pion;
+            this.position = pion.getPosition();
+            this.f1 = f1;
+            this.f2 = f2;
+            this.joueur = joueur;
+        }
+    }
+
 
     public Jeu(int WIDTH, int HEIGHT, Cercle cercleDeJeu) {
 
@@ -127,16 +148,30 @@ public class Jeu {
             }
         }
     }
-
+    
     public void initPions() {
         pions.clear();
 
         for (Types.TypePion type : Types.TypePion.values()) {
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i < MAX_PIONS_PAR_JOUEUR; i++) {
                 Coordonnees pos = null;
                 pions.add(new Pion(type, pos));
             }
         }
+    }
+
+    private int nombreDePionsPlacees(Types.TypePion type) {
+        int compteur = 0;
+        for (Pion p : pions) {
+            if (p.getType() == type && p.getPosition() != null) {
+                compteur++;
+            }
+        }
+        return compteur;
+    }
+
+    private boolean peutPlacerPionDeType(Types.TypePion type) {
+        return nombreDePionsPlacees(type) < MAX_PIONS_PAR_JOUEUR;
     }
 
     private Coordonnees genererPositionAleatoire(ArrayList<Fleur> fleurs) {
@@ -189,6 +224,11 @@ public class Jeu {
 
     // pour placer un pion dans le cercle de jeu
     public boolean placePion(Pion pion, Coordonnees pos) {
+
+        if (!peutPlacerPionDeType(pion.getType())) {
+            System.out.println("IMPOSSIBLE DE PLACER PLUS DE " + MAX_PIONS_PAR_JOUEUR + " PIONS DE CE TYPE : " + pion.getType());
+            return false;
+        }
 
         if (!cercleDeJeu.contientPoint(pos)) {
             System.out.println("PION HORS DU CERCLE : " + pos.getX() + ", " + pos.getY());
@@ -506,6 +546,51 @@ public class Jeu {
 
     return map;
 }
+    public void undo(){
+        if(!this.undoStack.isEmpty()){
+            ActionJeu action = this.undoStack.pop();
+            // Annuler l'action
+            action.pion.setPosition(null); // Retirer le pion du plateau
+            if (action.f1 != null) {
+                action.joueur.getFleursGagnees().remove(action.f1); // Retirer la fleur du joueur
+                fleurs.add(action.f1); // Remettre la fleur sur le plateau
+            }
+            if (action.f2 != null) {
+                action.joueur.getFleursGagnees().remove(action.f2); // Retirer la fleur du joueur
+                fleurs.add(action.f2); // Remettre la fleur sur le plateau
+            }
+            this.redoStack.push(action); // Ajouter l'action annulée à la pile de redo
+        }
+    }
+
+    public void redo(){
+        if(!this.redoStack.isEmpty()){
+            ActionJeu action = this.redoStack.pop();
+            // Refaire l'action
+            if (placePion(action.pion, action.position)) { // Replacer le pion à la position sauvegardée
+                if (action.f1 != null) {
+                    action.joueur.ajouterFleur(action.f1); // Retirer la fleur du plateau et la donner au joueur
+                    fleurs.remove(action.f1);
+                }
+                if (action.f2 != null) {
+                    action.joueur.ajouterFleur(action.f2); // Retirer la fleur du plateau et la donner au joueur
+                    fleurs.remove(action.f2);
+                }
+                this.undoStack.push(action); // Ajouter l'action refaite à la pile d'undo
+            } else {
+                System.out.println("Impossible de refaire l'action : placement du pion invalide.");
+            }
+        }
+    }
+
+    public void reset() {
+        // Réinitialiser le jeu à son état initial
+        initPlayers();
+        initFleurs();
+        initPions();
+        undoStack.clear();
+        redoStack.clear();
+    }
 
     /*
      * public Fleur getFleurProche(Coordonnees pos, double distanceMax) {

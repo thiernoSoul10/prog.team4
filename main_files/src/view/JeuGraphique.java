@@ -12,6 +12,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import org.w3c.dom.events.MouseEvent;
+import java.awt.BorderLayout;
+import java.awt.RenderingHints;
+import javax.swing.JPanel;
+import javax.swing.JButton;
 
 import global.Configuration;
 import model.Cercle;
@@ -26,6 +30,9 @@ public class JeuGraphique extends JComponent {
     private JFrame frame;
     public Jeu jeu;
     private int width = 660, height = 360;
+    //private JButton undoButton;
+    //private JButton redoButton;
+    //private JButton resetButton;
 
     private Score scoreArgent, scoreOr;
     private JLabel scoreLabel;
@@ -50,6 +57,17 @@ public class JeuGraphique extends JComponent {
         setFocusable(true);
         requestFocusInWindow();
         mouse = new EcouteurDeSouris(this);
+
+        // undoButton = new JButton("Undo");
+        // redoButton = new JButton("Redo");
+        // resetButton = new JButton("Reset");
+        
+
+        //JPanel buttonPanel = new JPanel();
+        //buttonPanel.add(undoButton);
+        //buttonPanel.add(redoButton);
+        //buttonPanel.add(resetButton);
+
 
         try {
             // Chargement des images des fleurs
@@ -77,7 +95,7 @@ public class JeuGraphique extends JComponent {
         setBackground(Color.BLACK);
         this.addMouseListener(mouse);
         this.addMouseMotionListener(mouse);
-        this.addMouseListener(new MouseAdapter() {
+      /*   this.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
 
@@ -97,7 +115,7 @@ public class JeuGraphique extends JComponent {
                 }
             }
         });
-
+ */
     }
 
     public void refreshScores() {
