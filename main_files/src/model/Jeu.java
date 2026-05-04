@@ -50,9 +50,7 @@ public class Jeu {
     private boolean avantageInitialApplique = false;
     private boolean enPhaseSelectionAvantage = false;
 
-    // Avantage du joueur qui commence
-    private boolean avantageInitialApplique = false;
-    private boolean enPhaseSelectionAvantage = false;
+  
 
     ////////// la classe ActionJeu //////////////////
     public static class ActionJeu {// pour l'undo redo
@@ -209,24 +207,6 @@ public class Jeu {
         }
     }
 
-    private void demarrerPhaseSelectionAvantage() {
-        enPhaseSelectionAvantage = true;
-        System.out.println("Phase d'avantage initial: " + getJoueurActuel().getNom() + " doit choisir une fleur");
-    }
-
-    public void appliquerAvantageAvecFleur(Fleur fleurChoisie) {
-        if (enPhaseSelectionAvantage && !avantageInitialApplique && fleurs.contains(fleurChoisie)) {
-            // Donner cette fleur au joueur qui commence
-            Joueur joueurCommence = getJoueurActuel();
-            joueurCommence.ajouterFleur(fleurChoisie);
-            fleurs.remove(fleurChoisie);
-
-            avantageInitialApplique = true;
-            enPhaseSelectionAvantage = false;
-
-            System.out.println("Avantage initial: " + joueurCommence.getNom() + " choisit une fleur " + fleurChoisie.getType());
-        }
-    }
 
     // Le nombre de pions par type placés dans le cercle 
     private int nombreDePionsPlacees(Types.TypePion type) {
