@@ -39,6 +39,7 @@ public class JeuGraphique extends JComponent {
 
     private Score scoreArgent, scoreOr;
     private JLabel scoreLabel;
+    private JLabel instructionLabel;
 
     // les images des fleurs et des pions seront chargées dans le constructeur de
     // l'interface graphique
@@ -48,11 +49,12 @@ public class JeuGraphique extends JComponent {
 
     private EcouteurDeSouris mouse;
 
-    public JeuGraphique(JFrame frame, Score scoreArgent, Score scoreOr, JLabel scoreLabel) {
+    public JeuGraphique(JFrame frame, Score scoreArgent, Score scoreOr, JLabel scoreLabel, JLabel instructionLabel) {
         this.frame = frame;
         this.scoreArgent = scoreArgent;
         this.scoreOr = scoreOr;
         this.scoreLabel = scoreLabel;
+        this.instructionLabel = instructionLabel;
 
         this.jeu = new Jeu(660, 360,
                 new Cercle(new Coordonnees(width / 2, height / 2), (width > height ? height : width) / 2));
@@ -127,6 +129,15 @@ public class JeuGraphique extends JComponent {
         scoreOr.updateFromGame(jeu.getJoueurs()[0]);
         scoreArgent.updateFromGame(jeu.getJoueurs()[1]);
         scoreLabel.setText(jeu.getJoueurs()[1].getScoreTotal() + " - " + jeu.getJoueurs()[0].getScoreTotal());
+        updateInstructionMessage();
+    }
+
+    private void updateInstructionMessage() {
+        if (jeu.isEnPhaseSelectionAvantage()) {
+            instructionLabel.setText(jeu.getJoueurActuel().getNom() + " : Choisissez une fleur pour votre avantage");
+        } else {
+            instructionLabel.setText("Au tour de " + jeu.getJoueurActuel().getNom());
+        }
     }
 
     public Coordonnees screenToModel(int screenX, int screenY) {
@@ -306,6 +317,24 @@ public class JeuGraphique extends JComponent {
                 g.drawImage(img, pos.getX() - taille / 2, pos.getY() - taille / 2, taille, taille, null);
             }
         }
+    }
+
+    public void undo() {
+        jeu.undo();
+        refreshScores();
+        repaint();
+    }
+
+    public void redo() {
+        jeu.redo();
+        refreshScores();
+        repaint();
+    }
+
+    public void reset() {
+        jeu.reset();
+        refreshScores();
+        repaint();
     }
 
 }

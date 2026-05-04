@@ -37,6 +37,10 @@ public class Jeu {
     public Stack<ActionJeu> undoStack = new Stack<>();
     public Stack<ActionJeu> redoStack = new Stack<ActionJeu>();
 
+    // Avantage du joueur qui commence
+    private boolean avantageInitialApplique = false;
+    private boolean enPhaseSelectionAvantage = false;
+
     public static class ActionJeu {// pour l'undo redo
         Pion pion;
         Coordonnees position;
@@ -74,6 +78,7 @@ public class Jeu {
         initPlayers();
         initFleurs();
         initPions();
+        demarrerPhaseSelectionAvantage();
 
         System.out.println("Game created");
     }
@@ -121,6 +126,14 @@ public class Jeu {
         return againstIA;
     }
 
+    public boolean isAvantageInitialApplique() {
+        return avantageInitialApplique;
+    }
+
+    public boolean isEnPhaseSelectionAvantage() {
+        return enPhaseSelectionAvantage;
+    }
+
     private void initPlayers() {
         if (isAgainstIA()) {
             joueurs = new Joueur[] {
@@ -157,6 +170,25 @@ public class Jeu {
                 Coordonnees pos = null;
                 pions.add(new Pion(type, pos));
             }
+        }
+    }
+
+    private void demarrerPhaseSelectionAvantage() {
+        enPhaseSelectionAvantage = true;
+        System.out.println("Phase d'avantage initial: " + getJoueurActuel().getNom() + " doit choisir une fleur");
+    }
+
+    public void appliquerAvantageAvecFleur(Fleur fleurChoisie) {
+        if (enPhaseSelectionAvantage && !avantageInitialApplique && fleurs.contains(fleurChoisie)) {
+            // Donner cette fleur au joueur qui commence
+            Joueur joueurCommence = getJoueurActuel();
+            joueurCommence.ajouterFleur(fleurChoisie);
+            fleurs.remove(fleurChoisie);
+
+            avantageInitialApplique = true;
+            enPhaseSelectionAvantage = false;
+
+            System.out.println("Avantage initial: " + joueurCommence.getNom() + " choisit une fleur " + fleurChoisie.getType());
         }
     }
 
@@ -404,6 +436,12 @@ public class Jeu {
 
             if (distance(pos, f.getPosition()) < 10) {
 
+                // Phase de sélection d'avantage initial
+                if (enPhaseSelectionAvantage) {
+                    appliquerAvantageAvecFleur(f);
+                    return true;
+                }
+
                 if (f == fleurSelectionnee1) {
                     fleurSelectionnee1 = null;
                     return true;
@@ -588,6 +626,7 @@ public class Jeu {
         initPlayers();
         initFleurs();
         initPions();
+        demarrerPhaseSelectionAvantage();
         undoStack.clear();
         redoStack.clear();
     }

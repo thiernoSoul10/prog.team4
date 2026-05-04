@@ -30,7 +30,7 @@ public class InterfaceGraphique implements Runnable {
         scoreHeader.setDirection(FlexPanel.Direction.ROW);
         scoreHeader.setJustify(FlexPanel.Justify.CENTER);
         scoreHeader.setAlign(FlexPanel.Align.CENTER);
-        scoreHeader.setPreferredSize(new Dimension(0, 350));
+        scoreHeader.setPreferredSize(new Dimension(0, 200));
         scoreHeader.setGap(100);
 
         Score scoreArgent = new Score(Types.TypePion.ARGENT);
@@ -47,6 +47,14 @@ public class InterfaceGraphique implements Runnable {
         scoreHeader.add(scoreLabel);
         scoreHeader.add(scoreOr);
 
+        // ================= MESSAGE D'INSTRUCTION =================
+        JLabel instructionLabel = new JLabel("Avantage", SwingConstants.CENTER);
+        instructionLabel.setForeground(Color.WHITE);
+        instructionLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        instructionLabel.setPreferredSize(new Dimension(0, 50));
+        instructionLabel.setBackground(Color.BLACK);
+        instructionLabel.setOpaque(true);
+
         // ================= ZONE JEU (ROW) =================
         FlexPanel gameRow = new FlexPanel();
         gameRow.setDirection(FlexPanel.Direction.ROW);
@@ -54,16 +62,41 @@ public class InterfaceGraphique implements Runnable {
         gameRow.setAlign(FlexPanel.Align.STRETCH);
         gameRow.setBackground(Color.BLACK);
 
-        JeuGraphique aire = new JeuGraphique(frame, scoreArgent, scoreOr, scoreLabel);
+        JeuGraphique aire = new JeuGraphique(frame, scoreArgent, scoreOr, scoreLabel, instructionLabel);
         aire.setBackground(Color.BLACK);
         aire.setOpaque(true);
 
+        // ================= BOUTONS UNDO/REDO/RESET =================
+        FlexPanel buttonPanel = new FlexPanel();
+        buttonPanel.setDirection(FlexPanel.Direction.ROW);
+        buttonPanel.setJustify(FlexPanel.Justify.CENTER);
+        buttonPanel.setAlign(FlexPanel.Align.CENTER);
+        buttonPanel.setGap(20);
+        buttonPanel.setPreferredSize(new Dimension(0, 40));
+        buttonPanel.setBackground(Color.BLACK);
+
+        JButton undoButton = new JButton("Undo");
+        undoButton.setPreferredSize(new Dimension(80, 40));
+        undoButton.addActionListener(e -> aire.undo());
+
+        JButton redoButton = new JButton("Redo");
+        redoButton.setPreferredSize(new Dimension(80, 40));
+        redoButton.addActionListener(e -> aire.redo());
+
+        JButton resetButton = new JButton("Reset");
+        resetButton.setPreferredSize(new Dimension(80, 40));
+        resetButton.addActionListener(e -> aire.reset());
+
+        buttonPanel.add(undoButton);
+        buttonPanel.add(redoButton);
+        buttonPanel.add(resetButton);
+
         PionArgent leftPile = new PionArgent(frame);
-        leftPile.setPreferredSize(new Dimension(100, 600));
+        leftPile.setPreferredSize(new Dimension(80, 600));
         leftPile.setBackground(Color.BLACK);
 
         PionOr rightPile = new PionOr();
-        rightPile.setPreferredSize(new Dimension(100, 600));
+        rightPile.setPreferredSize(new Dimension(80, 600));
         rightPile.setBackground(Color.BLACK);
 
         JPanel s1 = new JPanel();
@@ -85,13 +118,17 @@ public class InterfaceGraphique implements Runnable {
         // ================= ASSEMBLAGE FINAL =================
         root.add(scoreHeader);
         root.setFlexGrow(scoreHeader, 0);
+        root.add(instructionLabel);
+        root.setFlexGrow(instructionLabel, 0);
         root.add(gameRow);
         root.setFlexGrow(gameRow, 1);
+        root.add(buttonPanel);
+        root.setFlexGrow(buttonPanel, 0);
 
         frame.add(root);
 
         // ================= FRAME =================
-        frame.setSize(1200, 950);
+        frame.setSize(1400, 1000);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
