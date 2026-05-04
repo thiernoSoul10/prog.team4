@@ -1,6 +1,7 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
@@ -18,7 +19,7 @@ public class Jeu {
     int nbPions = 12; // nombre de pions
     int nbFleurs = 49; // nombre de fleurs
 
-    private static final double DIST_MIN_FLEURS = 20; // distance min entre les fleurs
+    private static final double DIST_MIN_FLEURS = 30; // distance min entre les fleurs
     private static final int NB_JOUEURS = 2;
     private static final int MAX_PIONS_PAR_JOUEUR = 6;
 
@@ -33,10 +34,25 @@ public class Jeu {
 
     public boolean againstIA = false;
 
+    ///////// pour la marge (afin que les fleurs ne sortent pas du cercle)//////////
+    ////////// vu qu'on dessine les fleurs avec le format dans view (hauteur *
+    ///////// largeur )
+    ///////// avec hauteur == largeur, alors la view va nous envoyer la taille qu'on
+    ///////// divisera par 2
+    ///////// voir dans jeuGraphique, juste après rcalcul de la taille, on fera
+    ///////// setMarge(taille/2)
+
+    private double marge;
+
     // pour l'undo redo
     public Stack<ActionJeu> undoStack = new Stack<>();
     public Stack<ActionJeu> redoStack = new Stack<ActionJeu>();
 
+    // Avantage du joueur qui commence
+    private boolean avantageInitialApplique = false;
+    private boolean enPhaseSelectionAvantage = false;
+
+    ////////// la classe ActionJeu //////////////////
     public static class ActionJeu {// pour l'undo redo
         Pion pion;
         Coordonnees position;
@@ -52,7 +68,6 @@ public class Jeu {
             this.joueur = joueur;
         }
     }
-
 
     public Jeu(int WIDTH, int HEIGHT, Cercle cercleDeJeu) {
 
@@ -74,12 +89,16 @@ public class Jeu {
         initPlayers();
         initFleurs();
         initPions();
+        demarrerPhaseSelectionAvantage();
 
         System.out.println("Game created");
     }
 
     //////////////////////////////////// GETTERS ET SETTERS METHODES
     //////////////////////////////////// /////////////////////////////////////////
+    public void setMarge(double marge) {
+        this.marge = marge;
+    }
 
     public Cercle getCercleDeJeu() {
         return cercleDeJeu;
@@ -121,6 +140,14 @@ public class Jeu {
         return againstIA;
     }
 
+    public boolean isAvantageInitialApplique() {
+        return avantageInitialApplique;
+    }
+
+    public boolean isEnPhaseSelectionAvantage() {
+        return enPhaseSelectionAvantage;
+    }
+
     private void initPlayers() {
         if (isAgainstIA()) {
             joueurs = new Joueur[] {
@@ -137,7 +164,8 @@ public class Jeu {
         }
     }
 
-    ////////////////// initialisatin des fleurs////////////////////////////////////
+    ////////////////// initialisatin des fleurs et
+    ////////////////// pions////////////////////////////////////
     public void initFleurs() {
         fleurs.clear();
 
@@ -148,7 +176,7 @@ public class Jeu {
             }
         }
     }
-    
+
     public void initPions() {
         pions.clear();
 
@@ -160,6 +188,27 @@ public class Jeu {
         }
     }
 
+    private void demarrerPhaseSelectionAvantage() {
+        enPhaseSelectionAvantage = true;
+        System.out.println("Phase d'avantage initial: " + getJoueurActuel().getNom() + " doit choisir une fleur");
+    }
+
+    public void appliquerAvantageAvecFleur(Fleur fleurChoisie) {
+        if (enPhaseSelectionAvantage && !avantageInitialApplique && fleurs.contains(fleurChoisie)) {
+            // Donner cette fleur au joueur qui commence
+            Joueur joueurCommence = getJoueurActuel();
+            joueurCommence.ajouterFleur(fleurChoisie);
+            fleurs.remove(fleurChoisie);
+
+            avantageInitialApplique = true;
+            enPhaseSelectionAvantage = false;
+
+            System.out.println(
+                    "Avantage initial: " + joueurCommence.getNom() + " choisit une fleur " + fleurChoisie.getType());
+        }
+    }
+
+    // Le nombre de pions par type placés dans le cercle
     private int nombreDePionsPlacees(Types.TypePion type) {
         int compteur = 0;
         for (Pion p : pions) {
@@ -170,16 +219,18 @@ public class Jeu {
         return compteur;
     }
 
+    // si on peut placer un pion d'un certain type(or ou argent) dans le cercle
     private boolean peutPlacerPionDeType(Types.TypePion type) {
         return nombreDePionsPlacees(type) < MAX_PIONS_PAR_JOUEUR;
     }
 
+    // Génération de position aleatoire pour les fleurs
     private Coordonnees genererPositionAleatoire(ArrayList<Fleur> fleurs) {
         Coordonnees pos;
 
         do {
             double angle = Math.random() * 2 * Math.PI;
-            double margeFleur = 20; // pour ne pas déborder
+            double margeFleur = marge; // pour ne pas déborder
             double r = Math.sqrt(Math.random()) * (cercleDeJeu.getRayon() - margeFleur);
 
             double x = cercleDeJeu.getCentre().getX() + r * Math.cos(angle);
@@ -191,6 +242,7 @@ public class Jeu {
         return pos;
     }
 
+    // Si la position pour mettre les fleurs est valide
     private boolean positionValide(Coordonnees pos, ArrayList<Fleur> fleurs) {
         for (Fleur f : fleurs) {
             if (distance(pos, f.getPosition()) < DIST_MIN_FLEURS) {
@@ -200,6 +252,7 @@ public class Jeu {
         return true;
     }
 
+    // dist entre deux points de coordonnes
     private double distance(Coordonnees a, Coordonnees b) {
         double dx = a.getX() - b.getX();
         double dy = a.getY() - b.getY();
@@ -226,7 +279,8 @@ public class Jeu {
     public boolean placePion(Pion pion, Coordonnees pos) {
 
         if (!peutPlacerPionDeType(pion.getType())) {
-            System.out.println("IMPOSSIBLE DE PLACER PLUS DE " + MAX_PIONS_PAR_JOUEUR + " PIONS DE CE TYPE : " + pion.getType());
+            System.out.println(
+                    "IMPOSSIBLE DE PLACER PLUS DE " + MAX_PIONS_PAR_JOUEUR + " PIONS DE CE TYPE : " + pion.getType());
             return false;
         }
 
@@ -269,7 +323,7 @@ public class Jeu {
     /* ============= fonctions auxiliares ================= */
 
     // on verifie si la position où on place le pion est libre
-    //A REVOIR
+    // A REVOIR
     private boolean positionLibrePourPion(Coordonnees pos) {
         // on verifie qu'il y a une distance avec toutes les fleurs
         /*
@@ -308,7 +362,7 @@ public class Jeu {
         return true;
     }
 
-    // attribuer les fleurs restantes ( après avoir jouer , il se peut que le joueur
+    // attribuer les fleurs restantes ( après avoir joué , il se peut que le joueur
     // suivant ai 2 fleurs)
     // qui sont proche de lui, car des obstacles ont disparus sur le plateau, si on
     // peut dire comme ça )
@@ -352,8 +406,14 @@ public class Jeu {
         return null;
     }
 
+    // verifie si tous les pions sont placés (type argent et or )
     private boolean tousLesPionsPlaces() {
-        return pions.size() == 0;
+        for (Pion p : pions) {
+            // le pion n'a pas de coordonnée, donc il n'est pas placé dans le plateau de jeu
+            if (p.getPosition() == null)
+                return false;
+        }
+        return true;
     }
 
     ////////////////////////////// pour l'affichage
@@ -404,6 +464,12 @@ public class Jeu {
 
             if (distance(pos, f.getPosition()) < 10) {
 
+                // Phase de sélection d'avantage initial
+                if (enPhaseSelectionAvantage) {
+                    appliquerAvantageAvecFleur(f);
+                    return true;
+                }
+
                 if (f == fleurSelectionnee1) {
                     fleurSelectionnee1 = null;
                     return true;
@@ -435,30 +501,43 @@ public class Jeu {
 
     private boolean surSegment(Coordonnees A, Coordonnees B, Coordonnees C) {
 
-        int x1 = A.getX();
-        int y1 = A.getY();
-        int x2 = B.getX();
-        int y2 = B.getY();
-        int x = C.getX();
-        int y = C.getY();
+        double ax = A.getX();
+        double ay = A.getY();
+        double bx = B.getX();
+        double by = B.getY();
+        double cx = C.getX();
+        double cy = C.getY();
 
-        // 1. Calcul de la distance du point C au segment [AB]
-        // det est le double de l'aire du triangle ABC
-        long det = Math.abs((long) (x2 - x1) * (y - y1) - (long) (y2 - y1) * (x - x1));
-        double distAB = distance(A, B);
+        // Vecteurs AB et AC
+        double abx = bx - ax;
+        double aby = by - ay;
 
-        if (distAB == 0)
+        double acx = cx - ax;
+        double acy = cy - ay;
+
+        // Produit scalaire pour projection
+        double ab2 = abx * abx + aby * aby;
+        if (ab2 == 0)
             return false;
 
-        // Seuil de collision (environ 12 pixels pour le rayon d'une fleur/pion)
-        double distanceC_AB = det / distAB;
-        if (distanceC_AB > 12)
+        double t = (acx * abx + acy * aby) / ab2;
+
+        // Vérifie si projection est sur le segment
+        if (t < 0 || t > 1)
             return false;
 
-        // 2. Vérification que C est bien entre A et B
-        int marge = 5;
-        return x >= Math.min(x1, x2) - marge && x <= Math.max(x1, x2) + marge
-                && y >= Math.min(y1, y2) - marge && y <= Math.max(y1, y2) + marge;
+        // Point projeté sur AB
+        double px = ax + t * abx;
+        double py = ay + t * aby;
+
+        // Distance C -> segment
+        double dx = cx - px;
+        double dy = cy - py;
+
+        double distance = Math.sqrt(dx * dx + dy * dy);
+
+        // tolérance (rayon des pièces)
+        return distance <= 12;
     }
 
     private boolean segmentLibre(Coordonnees A, Coordonnees B) {
@@ -531,23 +610,23 @@ public class Jeu {
 
     }
 
-
     public Map<Types.TypeFleur, Integer> getScore(Joueur joueur) {
 
-    Map<Types.TypeFleur, Integer> map = new java.util.HashMap<>();
+        Map<Types.TypeFleur, Integer> map = new java.util.HashMap<>();
 
-    for (Types.TypeFleur t : Types.TypeFleur.values()) {
-        map.put(t, 0);
+        for (Types.TypeFleur t : Types.TypeFleur.values()) {
+            map.put(t, 0);
+        }
+
+        for (Fleur f : joueur.getFleursGagnees()) {
+            map.put(f.getType(), map.get(f.getType()) + 1);
+        }
+
+        return map;
     }
 
-    for (Fleur f : joueur.getFleursGagnees()) {
-        map.put(f.getType(), map.get(f.getType()) + 1);
-    }
-
-    return map;
-}
-    public void undo(){
-        if(!this.undoStack.isEmpty()){
+    public void undo() {
+        if (!this.undoStack.isEmpty()) {
             ActionJeu action = this.undoStack.pop();
             // Annuler l'action
             action.pion.setPosition(null); // Retirer le pion du plateau
@@ -563,8 +642,8 @@ public class Jeu {
         }
     }
 
-    public void redo(){
-        if(!this.redoStack.isEmpty()){
+    public void redo() {
+        if (!this.redoStack.isEmpty()) {
             ActionJeu action = this.redoStack.pop();
             // Refaire l'action
             if (placePion(action.pion, action.position)) { // Replacer le pion à la position sauvegardée
@@ -588,10 +667,110 @@ public class Jeu {
         initPlayers();
         initFleurs();
         initPions();
+        demarrerPhaseSelectionAvantage();
         undoStack.clear();
         redoStack.clear();
     }
 
+    public void placerPionDepuisDrag(Coordonnees pos, Object payload) {
+
+        if (payload == null)
+            return;
+
+        if (!(payload instanceof Types.TypePion)) {
+            System.out.println("Payload invalide");
+            return;
+        }
+
+        Types.TypePion type = (Types.TypePion) payload;
+        Joueur joueurActuel = getJoueurActuel();
+
+        if (joueurActuel.getTypePion() != type) {
+            System.out.println("Ce n'est pas le bon joueur !");
+            return;
+        }
+
+        Fleur[] flowers = trouverFleursPourPion(pos);
+        if (flowers == null) {
+            System.out.println("Placement invalide : pas entre deux fleurs compatibles !");
+            return;
+        }
+
+        Pion pion = new Pion(type, null);
+
+        jouerCoup(
+                joueurActuel,
+                pion,
+                pos,
+                flowers[0],
+                flowers[1]);
+
+        if (pion.getPosition() != null) {
+            pions.add(pion);
+        }
+
+        System.out.println("Pion placé via drag !");
+    }
+
+    private Fleur[] trouverFleursPourPion(Coordonnees pos) {
+        for (Types.TypeFleur typeFleur : Types.TypeFleur.values()) {
+            List<Fleur> deMemeType = new ArrayList<>();
+            for (Fleur f : fleurs) {
+                if (f.getType() == typeFleur) {
+                    deMemeType.add(f);
+                }
+            }
+
+            for (int i = 0; i < deMemeType.size(); i++) {
+                for (int j = i + 1; j < deMemeType.size(); j++) {
+                    Fleur f1 = deMemeType.get(i);
+                    Fleur f2 = deMemeType.get(j);
+
+                    if (estExactementAuMilieu(f1.getPosition(), f2.getPosition(), pos)) {
+                        if (fleursConnectées(f1, f2)) {
+                            return new Fleur[] { f1, f2 };
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean estExactementAuMilieu(Coordonnees A, Coordonnees B, Coordonnees C) {
+        double ax = A.getX();
+        double ay = A.getY();
+        double bx = B.getX();
+        double by = B.getY();
+        double cx = C.getX();
+        double cy = C.getY();
+
+        double abx = bx - ax;
+        double aby = by - ay;
+        double acx = cx - ax;
+        double acy = cy - ay;
+
+        double ab2 = abx * abx + aby * aby;
+        if (ab2 == 0)
+            return false;
+
+        double t = (acx * abx + acy * aby) / ab2;
+
+        // Doit être environ au milieu (t=0.5)
+        if (Math.abs(t - 0.5) > 0.1)
+            return false;
+
+        // Doit être sur la ligne (distance faible)
+        double p_x = ax + t * abx;
+        double p_y = ay + t * aby;
+        double dx = cx - p_x;
+        double dy = cy - p_y;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+
+        return distance <= 15;
+    }
+
+  
     /*
      * public Fleur getFleurProche(Coordonnees pos, double distanceMax) {
      * Fleur best = null;

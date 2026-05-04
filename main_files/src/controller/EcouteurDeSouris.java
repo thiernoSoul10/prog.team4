@@ -24,8 +24,6 @@ public class EcouteurDeSouris extends MouseAdapter {
 
         Coordonnees modelPos = jeuGraphique.screenToModel(x, y);
 
-        System.out.println(
-                "Clic écran: (" + x + ", " + y + ") -> Modèle: (" + modelPos.getX() + ", " + modelPos.getY() + ")");
 
         // Vérifie si clic dans le cercle
         if (!game.getCercleDeJeu().contientPoint(modelPos)) {
@@ -96,6 +94,6 @@ public class EcouteurDeSouris extends MouseAdapter {
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        System.out.println("Souris relâchée: (" + e.getX() + ", " + e.getY() + ")");
+      
     }
 }

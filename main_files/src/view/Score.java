@@ -4,11 +4,9 @@ import global.Configuration;
 import model.Fleur;
 import model.Joueur;
 import model.Types;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.util.*;
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -101,7 +99,7 @@ public class Score extends JComponent {
             g2.drawImage(pawnImage, (w - pawnSize) / 2, startY, pawnSize, pawnSize, null);
         }
 
-        // 2. Dessiner les fleurs en GRILLE (7 types x 7 fleurs)
+        //Dessiner les fleurs en GRILLE (7 types x 7 fleurs)
         int currentY = startY + pawnSize + 15;
         int availableHeight = h - currentY - 10;
         int availableWidth = w - 10;

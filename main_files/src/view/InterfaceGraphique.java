@@ -1,8 +1,11 @@
 package view;
 
 import model.Types;
+import global.Configuration;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class InterfaceGraphique implements Runnable {
 
@@ -15,7 +18,10 @@ public class InterfaceGraphique implements Runnable {
         frame = new JFrame("LACUNA");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         DragLayer dragLayer = new DragLayer();
+        dragLayer.setOpaque(false);
+
         frame.setGlassPane(dragLayer);
+        frame.getGlassPane().setVisible(true);
         dragLayer.setVisible(true);
 
         // ================= ROOT FLEX (VERTICAL) =================
@@ -30,7 +36,7 @@ public class InterfaceGraphique implements Runnable {
         scoreHeader.setDirection(FlexPanel.Direction.ROW);
         scoreHeader.setJustify(FlexPanel.Justify.CENTER);
         scoreHeader.setAlign(FlexPanel.Align.CENTER);
-        scoreHeader.setPreferredSize(new Dimension(0, 350));
+        scoreHeader.setPreferredSize(new Dimension(0, 200));
         scoreHeader.setGap(100);
 
         Score scoreArgent = new Score(Types.TypePion.ARGENT);
@@ -39,13 +45,45 @@ public class InterfaceGraphique implements Runnable {
         Score scoreOr = new Score(Types.TypePion.OR);
         scoreOr.setPreferredSize(new Dimension(250, 320));
 
+        JLabel iconArgent;
+        JLabel iconOr;
+        try {
+            Image imgArgent = ImageIO.read(Configuration.ouvre("pion_argent.png"));
+            Image scaledArgent = imgArgent.getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+            iconArgent = new JLabel(new ImageIcon(scaledArgent));
+
+            Image imgOr = ImageIO.read(Configuration.ouvre("pion_or.png"));
+            Image scaledOr = imgOr.getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+            iconOr = new JLabel(new ImageIcon(scaledOr));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            iconArgent = new JLabel();
+            iconOr = new JLabel();
+        }
+
         JLabel scoreLabel = new JLabel("0 - 0", SwingConstants.CENTER);
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setFont(new Font("Arial", Font.BOLD, 40));
 
+        // panel comme un score de foot
+        JPanel scorePanel = new JPanel();
+        scorePanel.setOpaque(false);
+
+        scorePanel.add(iconArgent);
+        scorePanel.add(scoreLabel);
+        scorePanel.add(iconOr);
         scoreHeader.add(scoreArgent);
-        scoreHeader.add(scoreLabel);
+        scoreHeader.add(scorePanel);
         scoreHeader.add(scoreOr);
+
+        // ================= MESSAGE D'INSTRUCTION =================
+        JLabel instructionLabel = new JLabel("Avantage", SwingConstants.CENTER);
+        instructionLabel.setForeground(Color.WHITE);
+        instructionLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        instructionLabel.setPreferredSize(new Dimension(0, 50));
+        instructionLabel.setBackground(Color.BLACK);
+        instructionLabel.setOpaque(true);
 
         // ================= ZONE JEU (ROW) =================
         FlexPanel gameRow = new FlexPanel();
@@ -54,17 +92,44 @@ public class InterfaceGraphique implements Runnable {
         gameRow.setAlign(FlexPanel.Align.STRETCH);
         gameRow.setBackground(Color.BLACK);
 
-        JeuGraphique aire = new JeuGraphique(frame, scoreArgent, scoreOr, scoreLabel);
+        JeuGraphique aire = new JeuGraphique(frame, scoreArgent, scoreOr, scoreLabel, instructionLabel);
         aire.setBackground(Color.BLACK);
         aire.setOpaque(true);
 
-        PionArgent leftPile = new PionArgent(frame);
-        leftPile.setPreferredSize(new Dimension(100, 600));
+        // ================= BOUTONS UNDO/REDO/RESET =================
+        FlexPanel buttonPanel = new FlexPanel();
+        buttonPanel.setDirection(FlexPanel.Direction.ROW);
+        buttonPanel.setJustify(FlexPanel.Justify.CENTER);
+        buttonPanel.setAlign(FlexPanel.Align.CENTER);
+        buttonPanel.setGap(20);
+        buttonPanel.setPreferredSize(new Dimension(0, 40));
+        buttonPanel.setBackground(Color.BLACK);
+
+        JButton undoButton = new JButton("Undo");
+        undoButton.setPreferredSize(new Dimension(80, 40));
+        undoButton.addActionListener(e -> aire.undo());
+
+        JButton redoButton = new JButton("Redo");
+        redoButton.setPreferredSize(new Dimension(80, 40));
+        redoButton.addActionListener(e -> aire.redo());
+
+        JButton resetButton = new JButton("Reset");
+        resetButton.setPreferredSize(new Dimension(80, 40));
+        resetButton.addActionListener(e -> aire.reset());
+
+        buttonPanel.add(undoButton);
+        buttonPanel.add(redoButton);
+        buttonPanel.add(resetButton);
+
+        PionArgent leftPile = new PionArgent(frame, aire.jeu);
+        leftPile.setPreferredSize(new Dimension(80, 600));
         leftPile.setBackground(Color.BLACK);
 
-        PionOr rightPile = new PionOr();
-        rightPile.setPreferredSize(new Dimension(100, 600));
+        PionOr rightPile = new PionOr(frame, aire.jeu);
+        rightPile.setPreferredSize(new Dimension(80, 600));
         rightPile.setBackground(Color.BLACK);
+
+        aire.setSidePiles(leftPile, rightPile);
 
         JPanel s1 = new JPanel();
         s1.setBackground(Color.BLACK);
@@ -85,13 +150,17 @@ public class InterfaceGraphique implements Runnable {
         // ================= ASSEMBLAGE FINAL =================
         root.add(scoreHeader);
         root.setFlexGrow(scoreHeader, 0);
+        root.add(instructionLabel);
+        root.setFlexGrow(instructionLabel, 0);
         root.add(gameRow);
         root.setFlexGrow(gameRow, 1);
+        root.add(buttonPanel);
+        root.setFlexGrow(buttonPanel, 0);
 
         frame.add(root);
 
         // ================= FRAME =================
-        frame.setSize(1200, 950);
+        frame.setSize(1400, 1000);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }

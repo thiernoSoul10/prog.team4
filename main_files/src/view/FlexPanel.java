@@ -29,7 +29,7 @@ public class FlexPanel extends JPanel {
     public void setAlign(Align a) { this.align = a; }
     public void setGap(int g) { this.gap = g; }
 
-    // 👉 NEW: flex-grow
+    //NEW: flex-grow
     public void setFlexGrow(Component c, int value) {
         flexGrow.put(c, value);
     }
@@ -53,7 +53,7 @@ public class FlexPanel extends JPanel {
 
         int count = comps.length;
 
-        // 1. calcul tailles fixes + flex
+        //calcul tailles fixes + flex
         for (int i = 0; i < count; i++) {
 
             Component c = comps[i];
@@ -79,7 +79,7 @@ public class FlexPanel extends JPanel {
         int cursorX = 0;
         int cursorY = 0;
 
-        // CENTER ALIGN
+        //CENTER ALIGN
         int offset = (justify == Justify.CENTER)
                 ? (space - totalFixed - gap * (count - 1)) / 2
                 : 0;
