@@ -4,39 +4,41 @@
  */
 package global;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public final class Configuration {
-    private static String PATH = "../res/images";
+    private static final String PATH = "/images/";
     private static boolean debug = true; // tous les messages sont affichés si vrai
     private static boolean debugError = true;
     public enum Mode {GRAPHIQUE, TEXTUEL }
 
     public static Mode mode = Mode.GRAPHIQUE;
     
-    public static FileInputStream ouvre(String path){
-        FileInputStream in = null;
+    public static InputStream ouvre(String path){
 
-        try{
-            in = new FileInputStream(PATH + "/" + path);
-        }  catch (FileNotFoundException e) {
-            debugeurErreur("ERREUR : impossible de trouver le fichier " + PATH + "/" + path);
-			System.exit(2);
-		}
+        InputStream in =
+            Configuration.class.getResourceAsStream(
+                PATH + path
+            );
+
+        if(in == null){
+            debugeurErreur(
+                "Impossible de trouver : " + PATH + path
+            );
+            System.exit(2);
+        }
 
         return in;
     }
 
-    public static FileInputStream ouvre(String path, String name){
-        FileInputStream in = null;
-
-        try{
-            in = new FileInputStream(path + "/" + name);
-        }  catch (FileNotFoundException e) {
-			debugeurErreur("ERREUR : impossible de trouver le fichier" + path + name);
-			System.exit(2);
-		}
+    public static InputStream ouvre(String path, String name){
+        InputStream in = Configuration.class.getResourceAsStream(
+                path + "/" + name);
+        
+        if(in == null){
+            debugeurErreur("ERREUR : impossible de trouver le fichier" + path + "/" + name);
+            System.exit(2);
+        }
 
         return in;
     }

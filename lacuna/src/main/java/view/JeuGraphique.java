@@ -43,6 +43,20 @@ public class JeuGraphique extends JComponent {
     private Image plateauImg;
 
     private EcouteurDeSouris mouse;
+    
+    // Juste pour le test
+    public JeuGraphique(JFrame frame){
+        this.frame = frame;
+        
+        this.jeu = new Jeu(660, 360,
+                new Cercle(new Coordonnees(width / 2, height / 2), (width > height ? height : width) / 2));
+
+        setFocusable(true);
+        requestFocusInWindow();
+        mouse = new EcouteurDeSouris(this);
+        
+        this.addMouseListener(mouse);
+    }
 
     public JeuGraphique(JFrame frame, Score scoreArgent, Score scoreOr, JLabel scoreLabel, JLabel instructionLabel) {
         this.frame = frame;
@@ -79,6 +93,8 @@ public class JeuGraphique extends JComponent {
             violetteImg = ImageIO.read(Configuration.ouvre("fleur_violette.png"));
             roseImg = ImageIO.read(Configuration.ouvre("fleur_rose.png"));
 
+            Configuration.debugeur("Images Fleurs chargées\n");
+            
             // Chargement des images des pions
             orImg = ImageIO.read(Configuration.ouvre("pion_or.png"));
             argentImg = ImageIO.read(Configuration.ouvre("pion_argent.png"));
