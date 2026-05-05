@@ -121,6 +121,23 @@ public class InterfaceGraphique implements Runnable {
         buttonPanel.add(redoButton);
         buttonPanel.add(resetButton);
 
+        // Bouton sauvegarder
+        JButton sauvegarderButton = new JButton("Save");
+        sauvegarderButton.setPreferredSize(new Dimension(120, 40));
+        sauvegarderButton.addActionListener(e -> aire.jeu.sauvegarderPartie("sauvegarde.txt"));
+
+        // Bouton charger
+        JButton chargerButton = new JButton("Load");
+        chargerButton.setPreferredSize(new Dimension(120, 40));
+        chargerButton.addActionListener(e -> {
+            aire.jeu.chargerPartie("sauvegarde.txt");
+            aire.refreshScores();
+            aire.repaint();
+        });
+
+        buttonPanel.add(sauvegarderButton);
+        buttonPanel.add(chargerButton);
+
         PionArgent leftPile = new PionArgent(frame, aire.jeu);
         leftPile.setPreferredSize(new Dimension(80, 600));
         leftPile.setBackground(Color.BLACK);

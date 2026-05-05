@@ -805,12 +805,12 @@ public class Jeu {
         return distance <= 15;
     }
 
-  
+
     /*
      * public Fleur getFleurProche(Coordonnees pos, double distanceMax) {
      * Fleur best = null;
      * double min = Double.MAX_VALUE;
-     * 
+     *
      * for (Fleur f : fleurs) {
      * double d = distance(pos, f.getPosition());
      * if (d < min && d < distanceMax) {
@@ -820,26 +820,255 @@ public class Jeu {
      * }
      * return best;
      * }
-     * 
+     *
      * public Fleur getFleurAlignee(Fleur ref) {
-     * 
+     *
      * for (Fleur f : fleurs) {
-     * 
+     *
      * if (f == ref)
      * continue;
      * if (f.getType() != ref.getType())
      * continue;
-     * 
+     *
      * int dx = Math.abs(f.getPosition().getX() - ref.getPosition().getX());
      * int dy = Math.abs(f.getPosition().getY() - ref.getPosition().getY());
-     * 
+     *
      * // horizontal OU vertical
      * if (dx < 15 || dy < 15) {
      * return f;
      * }
      * }
-     * 
+     *
      * return null;
      * }
      */
+
+    // Sauvegarde l'état complet de la partie dans un fichier texte
+    public void sauvegarderPartie(String cheminFichier) {
+        try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(cheminFichier))) {
+
+            // idx de joueur actuel
+            writer.write("JOUEUR_ACTUEL:");
+            writer.newLine();
+            writer.write(String.valueOf(currentPlayerIndex));
+            writer.newLine();
+
+            // flags de phase (avantage initial)
+            writer.write("AVANTAGE:");
+            writer.newLine();
+            writer.write(avantageInitialApplique + " " + enPhaseSelectionAvantage);
+            writer.newLine();
+
+            // etat de chaque pion : type + position (ou null si non placé)
+            writer.write("PIONS:");
+            writer.newLine();
+            for (Pion p : pions) {
+                if (p.getPosition() == null) {
+                    writer.write(p.getType().name() + " null");
+                } else {
+                    writer.write(p.getType().name() + " " + p.getPosition().getX() + " " + p.getPosition().getY());
+                }
+                writer.newLine();
+            }
+
+            // fleurs encore prsentes sur le plateau
+            writer.write("FLEURS_PLATEAU:");
+            writer.newLine();
+            for (Fleur f : fleurs) {
+                writer.write(f.getType().name() + " " + f.getPosition().getX() + " " + f.getPosition().getY());
+                writer.newLine();
+            }
+
+            // fleurs collectés par chaque joueur 
+            writer.write("FLEURS_COLLECTEES:");
+            writer.newLine();
+            for (int i = 0; i < joueurs.length; i++) {
+                for (Fleur f : joueurs[i].getFleursGagnees()) {
+                    writer.write(i + " " + f.getType().name() + " " + f.getPosition().getX() + " " + f.getPosition().getY());
+                    writer.newLine();
+                }
+            }
+
+            // Pile undo (du bas vers le haut pour recharger dans le meme ordre)
+            writer.write("UNDO_STACK:");
+            writer.newLine();
+            List<ActionJeu> actions = new ArrayList<>(undoStack);
+            for (ActionJeu action : actions) {
+                // type et position du pion
+                String pionStr = action.pion.getType().name() + " "
+                        + action.position.getX() + " " + action.position.getY();
+
+                // fleur f1 (ou null)
+                String f1Str = (action.f1 == null) ? "null"
+                        : action.f1.getType().name() + " " + action.f1.getPosition().getX() + " " + action.f1.getPosition().getY();
+
+                // fleur f2 (ou null)
+                String f2Str = (action.f2 == null) ? "null"
+                        : action.f2.getType().name() + " " + action.f2.getPosition().getX() + " " + action.f2.getPosition().getY();
+
+                // index du joueur qui a effectue l'action
+                int joueurIndex = 0;
+                for (int i = 0; i < joueurs.length; i++) {
+                    if (joueurs[i] == action.joueur) {
+                        joueurIndex = i;
+                        break;
+                    }
+                }
+
+                writer.write(pionStr + " | " + f1Str + " | " + f2Str + " | " + joueurIndex);
+                writer.newLine();
+            }
+
+            Configuration.debugeur("Partie sauvegardée dans : %s\n", cheminFichier);
+
+        } catch (java.io.IOException e) {
+            Configuration.debugeurErreur("Erreur lors de la sauvegarde : %s\n", e.getMessage());
+        }
+    }
+
+    // Charge l'état d'une partie depuis un fichier texte et reconstruit le jeu
+    public void chargerPartie(String cheminFichier) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(cheminFichier))) {
+
+            // Remise à zéro de l'état courant
+            pions.clear();
+            fleurs.clear();
+            undoStack.clear();
+            redoStack.clear();
+            fleurSelectionnee1 = null;
+            fleurSelectionnee2 = null;
+            initPlayers(); // recrée les joueurs avec fleursGagnees vides
+
+            String ligne;
+            String section = "";
+
+            while ((ligne = reader.readLine()) != null) {
+                ligne = ligne.trim();
+                if (ligne.isEmpty()) continue;
+
+                // Détection des sections
+                if (ligne.equals("JOUEUR_ACTUEL:"))       { section = "JOUEUR_ACTUEL";       continue; }
+                if (ligne.equals("AVANTAGE:"))             { section = "AVANTAGE";             continue; }
+                if (ligne.equals("PIONS:"))                { section = "PIONS";                continue; }
+                if (ligne.equals("FLEURS_PLATEAU:"))       { section = "FLEURS_PLATEAU";       continue; }
+                if (ligne.equals("FLEURS_COLLECTEES:"))    { section = "FLEURS_COLLECTEES";    continue; }
+                if (ligne.equals("UNDO_STACK:"))           { section = "UNDO_STACK";           continue; }
+
+                switch (section) {
+
+                    case "JOUEUR_ACTUEL":
+                        currentPlayerIndex = Integer.parseInt(ligne);
+                        break;
+
+                    case "AVANTAGE": {
+                        String[] parts = ligne.split(" ");
+                        avantageInitialApplique  = Boolean.parseBoolean(parts[0]);
+                        enPhaseSelectionAvantage = Boolean.parseBoolean(parts[1]);
+                        break;
+                    }
+
+                    case "PIONS": {
+                        String[] parts = ligne.split(" ");
+                        Types.TypePion type = Types.TypePion.valueOf(parts[0]);
+                        Coordonnees pos = null;
+                        if (!parts[1].equals("null")) {
+                            pos = new Coordonnees(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+                        }
+                        pions.add(new Pion(type, pos));
+                        break;
+                    }
+
+                    case "FLEURS_PLATEAU": {
+                        String[] parts = ligne.split(" ");
+                        Types.TypeFleur type = Types.TypeFleur.valueOf(parts[0]);
+                        Coordonnees pos = new Coordonnees(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+                        fleurs.add(new Fleur(type, pos));
+                        break;
+                    }
+
+                    case "FLEURS_COLLECTEES": {
+                        String[] parts = ligne.split(" ");
+                        int joueurIndex = Integer.parseInt(parts[0]);
+                        Types.TypeFleur type = Types.TypeFleur.valueOf(parts[1]);
+                        Coordonnees pos = new Coordonnees(Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+                        joueurs[joueurIndex].ajouterFleur(new Fleur(type, pos));
+                        break;
+                    }
+
+                    case "UNDO_STACK": {
+                       
+                        String[] segments = ligne.split(" \\| ");
+                        if (segments.length < 4) break;
+
+                        // Lecture du pion
+                        String[] pionParts = segments[0].trim().split(" ");
+                        Types.TypePion pionType = Types.TypePion.valueOf(pionParts[0]);
+                        int px = Integer.parseInt(pionParts[1]);
+                        int py = Integer.parseInt(pionParts[2]);
+
+                        // Recherche du pion dans la liste par type et position
+                        Pion pion = null;
+                        for (Pion p : pions) {
+                            if (p.getType() == pionType && p.getPosition() != null
+                                    && p.getPosition().getX() == px && p.getPosition().getY() == py) {
+                                pion = p;
+                                break;
+                            }
+                        }
+                        if (pion == null) break; // pion introuvable, on ignore cette action
+
+                        // Index du joueur
+                        int joueurIndex = Integer.parseInt(segments[3].trim());
+                        Joueur joueur = joueurs[joueurIndex];
+
+                        // Lecture de f1 
+                        Fleur f1 = null;
+                        String seg1 = segments[1].trim();
+                        if (!seg1.equals("null")) {
+                            String[] f1Parts = seg1.split(" ");
+                            Types.TypeFleur f1Type = Types.TypeFleur.valueOf(f1Parts[0]);
+                            int f1x = Integer.parseInt(f1Parts[1]);
+                            int f1y = Integer.parseInt(f1Parts[2]);
+                            // Recherche dans les fleurs collectées du joueur
+                            for (Fleur f : joueur.getFleursGagnees()) {
+                                if (f.getType() == f1Type
+                                        && f.getPosition().getX() == f1x
+                                        && f.getPosition().getY() == f1y) {
+                                    f1 = f;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Lecture de f2 (peut être null)
+                        Fleur f2 = null;
+                        String seg2 = segments[2].trim();
+                        if (!seg2.equals("null")) {
+                            String[] f2Parts = seg2.split(" ");
+                            Types.TypeFleur f2Type = Types.TypeFleur.valueOf(f2Parts[0]);
+                            int f2x = Integer.parseInt(f2Parts[1]);
+                            int f2y = Integer.parseInt(f2Parts[2]);
+                            // Recherche dans les fleurs collectées du joueur
+                            for (Fleur f : joueur.getFleursGagnees()) {
+                                if (f.getType() == f2Type
+                                        && f.getPosition().getX() == f2x
+                                        && f.getPosition().getY() == f2y) {
+                                    f2 = f;
+                                    break;
+                                }
+                            }
+                        }
+
+                        undoStack.push(new ActionJeu(pion, f1, f2, joueur));
+                        break;
+                    }
+                }
+            }
+
+            Configuration.debugeur("Partie chargée depuis : %s\n", cheminFichier);
+
+        } catch (java.io.IOException e) {
+            Configuration.debugeurErreur("Erreur lors du chargement : %s\n", e.getMessage());
+        }
+    }
 }
