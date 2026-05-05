@@ -90,28 +90,32 @@ public class Score extends JComponent {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         int w = getWidth();
-        int h = getHeight();
 
-        // 1. Dessiner le pion en haut
-        int pawnSize = Math.min(w, h / 6);
-        int startY = 5;
+        
+        java.awt.Rectangle vis = getVisibleRect();
+        int visH = (vis.height > 0) ? vis.height : getHeight();
+        int visY = (vis.height > 0) ? vis.y : 0;
+
+        // Pion en haut de la zone visible
+        int pawnSize = Math.min(w, visH / 6);
+        int startY = visY + 5;
         if (pawnImage != null) {
             g2.drawImage(pawnImage, (w - pawnSize) / 2, startY, pawnSize, pawnSize, null);
         }
 
-        //Dessiner les fleurs en GRILLE (7 types x 7 fleurs)
+        // Grille de fleurs (7 types x 7 fleurs)
         int currentY = startY + pawnSize + 15;
-        int availableHeight = h - currentY - 10;
+        int availableHeight = (visY + visH) - currentY - 10;
         int availableWidth = w - 10;
 
-        // Taille pour faire tenir 7x7
-        int boxSizeH = availableHeight / 7;
-        int boxSizeW = availableWidth / 7;
-        int boxSize = Math.min(boxSizeH, boxSizeW);
-        if (boxSize > 30)
-            boxSize = 30; // Taille max raisonnable pour une grille 7x7
-
+       
         int gap = 2;
+
+        
+        int boxSizeH = (availableHeight - 6 * gap) / 7;
+        int boxSizeW = (availableWidth - 6 * gap) / 7;
+        int boxSize = Math.min(boxSizeH, boxSizeW);
+        if (boxSize < 1) boxSize = 1; // éviter une taille nulle
         int totalGridW = 7 * boxSize + 6 * gap;
         int startX = (w - totalGridW) / 2;
 
