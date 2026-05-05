@@ -14,6 +14,11 @@ public class Fleur {
         this.type = type;
         this.position = position;
     }
+    
+    public Fleur(Types.TypeFleur type) {
+        this.type = type;
+        position = new Coordonnees(0, 0);
+    }
 
     public Types.TypeFleur getType() {
         return type;
@@ -21,6 +26,13 @@ public class Fleur {
 
     public Coordonnees getPosition() {
         return position;
+    }
+    
+    public void setPosition(Coordonnees pos){
+        if(pos == null) return;
+        
+        position.x = pos.x;
+        position.y = pos.y;
     }
 
     

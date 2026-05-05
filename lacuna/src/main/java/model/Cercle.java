@@ -4,6 +4,8 @@
  */
 package model;
 
+import global.Configuration;
+
 public class Cercle {
     
     private  Coordonnees centre;
@@ -60,7 +62,7 @@ public class Cercle {
         
         int dx = x - centre.getX();
         int dy = y - centre.getY();
-        System.out.println("Distance au centre: " + Math.sqrt(dx * dx + dy * dy));
+        Configuration.debugeur("Distance au centre: %d", Math.sqrt(dx * dx + dy * dy));
         return Math.sqrt(dx * dx + dy * dy);
     }
 
