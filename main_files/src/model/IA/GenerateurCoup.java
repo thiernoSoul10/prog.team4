@@ -1,6 +1,6 @@
 package model.IA;
 
-// liste tous les coups depuis un état
+// Liste tous les coups de l'IA depuis un état
 public class GenerateurCoup {
 
 }

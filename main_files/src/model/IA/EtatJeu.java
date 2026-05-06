@@ -1,13 +1,21 @@
 package model.IA;
 
-// copie l'état du plateau pour l'algo minimax
-public class EtatJeu {
-    public List<Fleur> fleursRestantes;
-    public List<Pion> pions;
-    public int[] fleursCollectees = new int[2];
-    public int[] fleursParJoueur;
-    public int joueurCourant;
+// Copie l'état du plateau pour l'algo minimax
 
+
+public class EtatJeu {
+
+    // Fleurs encore sur le plateau
+    public List<Fleur> fleursRestantes;
+
+    // Pions déjà placés sur le plateau
+    public List<Pion> pions;
+
+    // Fleurs collectées par chaque joueur
+    public List<Fleur>[] fleursParJoueur;
+
+    // Index du joueur courant ( 0 ou 1 )
+    public int joueurCourant;
 
 
 }

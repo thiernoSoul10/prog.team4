@@ -1,17 +1,39 @@
 package model.IA;
 
 
-// calcule le score heuristique d'un état
+// Calcule le score heuristique d'un état
 public class EvaluateurJeu {
 
     public int evaluer(EtatJeu etat, int indexIA) {
-        int scoreIA = compterFleurs(etat, indexIA);
-        int scoreJoueur = compterFleurs(etat, 1 - indexIA);
-        return scoreIA - scoreJoueur;
+
+        // Index du joueur
+        int indexJoueur = 1 - indexIA;
+
+        // Calcule des couleurs majoritaires pour IA et joueur
+        int couleursIA    = compterCouleursMajoritaires(etat, indexIA);
+        int couleursJoueur = compterCouleursMajoritaires(etat, indexJoueur);
+
+        // Calcul du bonus pour IA et joueur
+        int bonusIA    = bonus(etat, indexIA, indexJoueur);
+        int bonusJoueur = bonus(etat, indexJoueur, indexIA);
+
+        // Formule de calcul du score
+        return (couleursIA - couleursJoueur) * 100
+                + (bonusIA - bonusJoueur) * 10;
     }
 
-    private int compterFleurs(EtatJeu etat, int joueurIndex) {
-        return etat.fleursCollectees[joueurIndex];
+    // Renvoie le nombre de couleurs majoritaires pour un joueur et un état donné
+    public int compterCouleursMajoritaires(EtatJeu etat, indexJoueur){
+        return 0
     }
+
+    // Renvoie le bonus pour départager deux coups de valeures égales
+    public int bonus(EtatJeu etat,int  indexIA, int indexJoueur){
+        return 0;
+    }
+
+
 }
+
+// TODO: implémenter bonus et compterCouleursMajoritaires
 

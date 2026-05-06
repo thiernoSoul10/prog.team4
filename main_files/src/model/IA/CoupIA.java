@@ -1,6 +1,7 @@
 package model.IA;
 
-// Coup de l'IA
+// Représente un coup joué par l'IA ( deux fleurs  + la position du pion)
+
 public class CoupIA {
     public Fleur fleur1;
     public Fleur fleur2;

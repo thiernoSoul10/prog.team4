@@ -1,6 +1,6 @@
 package model.IA;
 
-// algo Minimax, retourne le meilleur CoupIA
+// Retourne le meilleur coup de l'IA via l'algo Minimax
 public class Minimax{
 
 }
