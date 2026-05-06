@@ -57,7 +57,7 @@ public class Cercle {
         int dx = x - centre.getX();
         int dy = y - centre.getY();
     //    System.out.println("Distance au centre: " + Math.sqrt(dx * dx + dy * dy));
-        return Math.sqrt(dx * dx + dy * dy);
+        return (double) Math.sqrt(dx * dx + dy * dy);
     }
 
     // Vérifie si le cercle contient un point de coordonnes P
