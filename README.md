@@ -20,7 +20,7 @@ ou lancer le fichier run.sh en lui donnant les droit d'execution
 
 # A faire 
 Correction des bugs suivants : 
-- Avantage initial n'est pas dans undoStack
+- Avantage initial n'est pas dans undoStack : DONE :)
 
 # Faycal
 
