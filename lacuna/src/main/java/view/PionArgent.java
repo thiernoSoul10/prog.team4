@@ -1,25 +1,26 @@
 package view;
 
 import global.Configuration;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import model.*;
 import java.awt.event.*;
 
 public class PionArgent extends JComponent {
 
     private Image pionArgent;
-    private int nbPions = 6;
+    private int maxPions = 6;
     private java.util.List<Rectangle> zonesPions = new java.util.ArrayList<>();
     private boolean dragging = false;
-    private Point dragPoint = null;
     private DragLayer dragLayer;
     private JFrame frame;
+    private Jeu jeu;
     private int draggedIndex = -1;
 
-    public PionArgent(JFrame frame) {
+    public PionArgent(JFrame frame, Jeu jeu) {
         this.frame = frame;
+        this.jeu = jeu;
         this.dragLayer = (DragLayer) frame.getGlassPane();
         try {
             pionArgent = ImageIO.read(Configuration.ouvre("pion_argent.png"));
@@ -29,20 +30,27 @@ public class PionArgent extends JComponent {
         }
         setFocusable(true);
         setOpaque(false);
-
         addMouseListener(new MouseAdapter() {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                for (Rectangle r : zonesPions) {
+                for (int i = 0; i < zonesPions.size(); i++) {
+                    Rectangle r = zonesPions.get(i);
                     if (r.contains(e.getPoint())) {
-                        dragLayer.setDraggedImage(pionArgent);
-                        dragLayer.setMouse(SwingUtilities.convertPoint(
+
+                        Point screen = SwingUtilities.convertPoint(
                                 PionArgent.this,
                                 e.getPoint(),
-                                frame));
+                                frame);
+
+                        dragLayer.startDrag(
+                                pionArgent,
+                                Types.TypePion.ARGENT,
+                                screen);
 
                         dragging = true;
+                        draggedIndex = i;
+                        repaint();
                         return;
                     }
                 }
@@ -51,7 +59,8 @@ public class PionArgent extends JComponent {
             @Override
             public void mouseReleased(MouseEvent e) {
                 dragging = false;
-                dragLayer.clear();
+                draggedIndex = -1;
+                repaint();
             }
         });
 
@@ -61,12 +70,12 @@ public class PionArgent extends JComponent {
                 if (!dragging)
                     return;
 
-                Point screenPoint = SwingUtilities.convertPoint(
+                Point screen = SwingUtilities.convertPoint(
                         PionArgent.this,
                         e.getPoint(),
                         frame);
 
-                dragLayer.setMouse(screenPoint);
+                dragLayer.updateMouse(screen);
             }
         });
     }
@@ -82,48 +91,43 @@ public class PionArgent extends JComponent {
         if (pionArgent == null)
             return;
 
+        int placed = 0;
+        for (Pion p : jeu.getPions()) {
+            if (p.getType() == Types.TypePion.ARGENT && p.getPosition() != null) {
+                placed++;
+            }
+        }
+        int remaining = maxPions - placed;
+
         int width = getWidth();
         int height = getHeight();
 
-        // Taille des pions (responsive)
         int gap = 10;
-        int maxPossibleSizeByHeight = (height - (nbPions + 1) * gap) / nbPions;
+        int maxPossibleSizeByHeight = (height - (maxPions + 1) * gap) / maxPions;
         int maxPossibleSizeByWidth = (int) (width * 0.35);
 
         int size = Math.min(maxPossibleSizeByHeight, maxPossibleSizeByWidth);
         if (size <= 0)
-            size = 10; //Sécurité
+            size = 10;
 
-        // Hauteur totale du bloc
-        int totalHeight = nbPions * size + (nbPions - 1) * gap;
-
-        // Centrage vertical
+        int totalHeight = maxPions * size + (maxPions - 1) * gap;
         int startY = (height - totalHeight) / 2;
-
-        // Alignement à DROITE (proche du centre car PionArgent est à gauche du centre)
         int startX = width - size - 10;
 
         zonesPions.clear();
 
-        for (int i = 0; i < nbPions; i++) {
+        for (int i = 0; i < remaining; i++) {
 
             int x = startX;
             int y = startY + i * (size + gap);
 
-            zonesPions.add(new Rectangle(x, y, size, size));
+            Rectangle r = new Rectangle(x, y, size, size);
+            zonesPions.add(r);
 
-            // si on est en train de drag ce pion on ne le dessine pas ici
             if (dragging && i == draggedIndex)
                 continue;
 
             g.drawImage(pionArgent, x, y, size, size, null);
-        }
-        if (dragging && dragPoint != null && draggedIndex != -1) {
-            int s = 40;
-            g.drawImage(pionArgent,
-                    dragPoint.x - s / 2,
-                    dragPoint.y - s / 2,
-                    s, s, null);
         }
     }
 }

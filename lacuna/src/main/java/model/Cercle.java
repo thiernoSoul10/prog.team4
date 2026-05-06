@@ -4,8 +4,6 @@
  */
 package model;
 
-import global.Configuration;
-
 public class Cercle {
     
     private  Coordonnees centre;
@@ -62,15 +60,15 @@ public class Cercle {
         
         int dx = x - centre.getX();
         int dy = y - centre.getY();
-        Configuration.debugeur("Distance au centre: %d", Math.sqrt(dx * dx + dy * dy));
-        return Math.sqrt(dx * dx + dy * dy);
+    //    System.out.println("Distance au centre: " + Math.sqrt(dx * dx + dy * dy));
+        return (double) Math.sqrt(dx * dx + dy * dy);
     }
 
     // Vérifie si le cercle contient un point de coordonnes P
     //attention: on suppose ici que si le point est sur la circonference 
     //alors il n'appartient au cercle ( c'est pour celà on a mis <=  et non < )
     public boolean contientPoint(Coordonnees p){
-        return distanceAuCentre(p) <= rayon ;
+        return distanceAuCentre(p) <= (double)rayon ;
     }
 
     // Cette methode permet de copier le cercle actuel (je suppose qu'elle nous aidera peut être pour le future)
@@ -80,4 +78,8 @@ public class Cercle {
     }
 
     
+
+
+
+
 }

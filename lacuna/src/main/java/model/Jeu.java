@@ -1,29 +1,33 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
-import java.util.List;
-import java.util.Collections;
 
 import global.Configuration;
 
 public class Jeu {
-    private Cercle cercleDeJeu;
-    private ArrayList<Pion> pions;
+    private Cercle cercleDeJeu; // le cercle du jeu
+    private ArrayList<Pion> pions; // contient tous les pions actuel dans le cercle
     private ArrayList<Fleur> fleurs;
-    private Fleur fleurSelectionnee1;
-    private Fleur fleurSelectionnee2;
-    int nbPions = 12;
-    int nbFleurs = 49;
+    private Fleur fleurSelectionnee1; // la fleur que le joueur a touché ( pour le moment on suppose que c'est la
+                                      // fleur la plus proche du point de clic )
+    private Fleur fleurSelectionnee2; // la fleur que le joueur a touché ( pour le moment on suppose que c'est la
+                                      // fleur la plus proche du point de clic )
+    int nbPions = 12; // nombre de pions
+    int nbFleurs = 49; // nombre de fleurs
 
-    private static final double DIST_MIN_FLEURS = 30;
+    private static final double DIST_MIN_FLEURS = 30; // distance min entre les fleurs
     private static final int NB_JOUEURS = 2;
     private static final int MAX_PIONS_PAR_JOUEUR = 6;
+    private static final int NB_COULEURS = 6;
 
-    private Joueur[] joueurs;
-    public int currentPlayerIndex;
+
+    //// Attributs pour les joueurs
+    private Joueur[] joueurs; // la liste des joueurs
+    public int currentPlayerIndex; // 0 pour le joueur 1
 
     private Random random;
 
@@ -32,15 +36,35 @@ public class Jeu {
 
     public boolean againstIA = false;
 
+    ///////// pour la marge (afin que les fleurs ne sortent pas du cercle)//////////
+    ////////// vu qu'on dessine les fleurs avec le format dans view (hauteur *
+    ///////// largeur )
+    ///////// avec hauteur == largeur, alors la view va nous envoyer la taille qu'on
+    ///////// divisera par 2
+    ///////// voir dans jeuGraphique, juste après rcalcul de la taille, on fera
+    ///////// setMarge(taille/2)
+
     private double marge;
 
+    // pour l'undo redo
     public Stack<ActionJeu> undoStack = new Stack<>();
-    public Stack<ActionJeu> redoStack = new Stack<>();
+    public Stack<ActionJeu> redoStack = new Stack<ActionJeu>();
 
+    // Avantage du joueur qui commence
     private boolean avantageInitialApplique = false;
     private boolean enPhaseSelectionAvantage = false;
+    private String feedbackMessage = "";
 
-    public static class ActionJeu {
+    public String getFeedbackMessage() {
+        return feedbackMessage;
+    }
+
+    public void setFeedbackMessage(String feedbackMessage) {
+        this.feedbackMessage = feedbackMessage;
+    }
+
+    ////////// la classe ActionJeu //////////////////
+    public static class ActionJeu {// pour l'undo redo
         Pion pion;
         Coordonnees position;
         Fleur f1;
@@ -49,19 +73,35 @@ public class Jeu {
 
         public ActionJeu(Pion pion, Fleur f1, Fleur f2, Joueur joueur) {
             this.pion = pion;
-            this.position = pion.getPosition();
+            //verifier que pion et sa position ne sont pas null avant de sauvegarder la position
+            this.position = (pion != null && pion.getPosition() != null)
+                    ? new Coordonnees(pion.getPosition().getX(), pion.getPosition().getY())
+                    : null;
             this.f1 = f1;
             this.f2 = f2;
             this.joueur = joueur;
         }
     }
 
+    public Pion getPionLibre(Types.TypePion type) {
+        for (Pion p : pions) {
+            if (p.getType() == type && p.getPosition() == null) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    public void joueurPrecedent() {
+        currentPlayerIndex = (currentPlayerIndex - 1 + NB_JOUEURS) % NB_JOUEURS;
+    }
+
     public Jeu(int WIDTH, int HEIGHT, Cercle cercleDeJeu) {
 
         if (isAgainstIA()) {
-            Configuration.debugeur("Game created in IA mode");
+            System.out.println("Game created in IA mode");
         } else {
-            Configuration.debugeur("Game created in MULTI mode");
+            System.out.println("Game created in MULTI mode");
         }
 
         this.cercleDeJeu = cercleDeJeu;
@@ -73,22 +113,17 @@ public class Jeu {
 
         random = new Random();
 
-        Configuration.debugeur("Initialisation des Joueurs\n");
         initPlayers();
-        
-        Configuration.debugeur("Initialisation des Fleurs\n");
         initFleurs();
-        
-        Configuration.debugeur("Initialisation des Pions\n");
         initPions();
-        
-        Configuration.debugeur("Demarage Phase de Selection\n");
         demarrerPhaseSelectionAvantage();
 
-        Configuration.debugeur("Game created\n");
+        System.out.println("Game created");
     }
 
-    public void setMarge(double marge){
+    //////////////////////////////////// GETTERS ET SETTERS METHODES
+    //////////////////////////////////// /////////////////////////////////////////
+    public void setMarge(double marge) {
         this.marge = marge;
     }
 
@@ -153,39 +188,21 @@ public class Jeu {
                     new JoueurHumain("Joueur 2", Types.TypePion.ARGENT)
             };
             currentPlayerIndex = random.nextInt(getNbJoueurs());
+            setFeedbackMessage(feedbackMessage + " Le joueur qui commence est : " + getJoueurActuel().getNom() + " (" + getJoueurActuel().getTypePion() + ").") ;
         }
     }
 
-    // ------------------------------------------------------------
-    //   *** INIT FLEURS — VERSION DEMANDÉE (shuffle + placement) ***
-    // ------------------------------------------------------------
+    ////////////////// initialisatin des fleurs et
+    ////////////////// pions////////////////////////////////////
     public void initFleurs() {
-        Configuration.debugeur("Suppression des Fleurs\n");
-        fleurs = new ArrayList<>();
+        fleurs.clear();
 
-        Configuration.debugeur("Initialisation\n");
-
-        List<Fleur> nouvelles = new ArrayList<>();
-
-        // 1. Générer toutes les fleurs
         for (Types.TypeFleur type : Types.TypeFleur.values()) {
-            for (int i = 0; i < 7; i++) {
-                nouvelles.add(new Fleur(type));
+            for (int i = 0; i < 7; i++) { //CHAQUE COULEUR À 6 PIONS    
+                Coordonnees pos = genererPositionAleatoire(fleurs);
+                fleurs.add(new Fleur(type, pos));
             }
         }
-
-        // 2. Mélanger pour éviter les patterns
-        Collections.shuffle(nouvelles);
-        Configuration.debugeur("Melange\n");
-
-
-        // 3. Assigner une position unique à chaque fleur
-        for (Fleur f : nouvelles) {
-            Coordonnees pos = genererPositionAleatoire(fleurs);
-            f.setPosition(pos);
-            fleurs.add(f);
-        }
-        Configuration.debugeur("Initialisation Terminée");
     }
 
     public void initPions() {
@@ -201,22 +218,28 @@ public class Jeu {
 
     private void demarrerPhaseSelectionAvantage() {
         enPhaseSelectionAvantage = true;
-        Configuration.debugeur("Phase d'avantage initial: " + getJoueurActuel().getNom() + " doit choisir une fleur");
+        //statusLabel.setText("Phase d'avantage initial: " + getJoueurActuel().getNom() + " doit choisir une fleur");
+        setFeedbackMessage("Phase d'avantage initial: " + getJoueurActuel().getTypePion() + " doit choisir une fleur");
+        //System.out.println("Phase d'avantage initial: " + getJoueurActuel().getNom() + " doit choisir une fleur");
     }
 
     public void appliquerAvantageAvecFleur(Fleur fleurChoisie) {
         if (enPhaseSelectionAvantage && !avantageInitialApplique && fleurs.contains(fleurChoisie)) {
+            // Donner cette fleur au joueur qui commence
             Joueur joueurCommence = getJoueurActuel();
             joueurCommence.ajouterFleur(fleurChoisie);
             fleurs.remove(fleurChoisie);
-
+            ActionJeu action = new ActionJeu(null, fleurChoisie, null, joueurCommence);
+            undoStack.push(action);
             avantageInitialApplique = true;
             enPhaseSelectionAvantage = false;
 
-            Configuration.debugeur("Avantage initial: " + joueurCommence.getNom() + " choisit une fleur " + fleurChoisie.getType());
+            System.out.println(
+                    "Avantage initial: " + joueurCommence.getNom() + " choisit une fleur " + fleurChoisie.getType());
         }
     }
 
+    // Le nombre de pions par type placés dans le cercle
     private int nombreDePionsPlacees(Types.TypePion type) {
         int compteur = 0;
         for (Pion p : pions) {
@@ -227,16 +250,18 @@ public class Jeu {
         return compteur;
     }
 
+    // si on peut placer un pion d'un certain type(or ou argent) dans le cercle
     private boolean peutPlacerPionDeType(Types.TypePion type) {
         return nombreDePionsPlacees(type) < MAX_PIONS_PAR_JOUEUR;
     }
 
+    // Génération de position aleatoire pour les fleurs
     private Coordonnees genererPositionAleatoire(ArrayList<Fleur> fleurs) {
         Coordonnees pos;
 
         do {
             double angle = Math.random() * 2 * Math.PI;
-            double margeFleur = marge;
+            double margeFleur = marge; // pour ne pas déborder
             double r = Math.sqrt(Math.random()) * (cercleDeJeu.getRayon() - margeFleur);
 
             double x = cercleDeJeu.getCentre().getX() + r * Math.cos(angle);
@@ -248,6 +273,7 @@ public class Jeu {
         return pos;
     }
 
+    // Si la position pour mettre les fleurs est valide
     private boolean positionValide(Coordonnees pos, ArrayList<Fleur> fleurs) {
         for (Fleur f : fleurs) {
             if (distance(pos, f.getPosition()) < DIST_MIN_FLEURS) {
@@ -257,63 +283,106 @@ public class Jeu {
         return true;
     }
 
+    // dist entre deux points de coordonnes
     private double distance(Coordonnees a, Coordonnees b) {
         double dx = a.getX() - b.getX();
         double dy = a.getY() - b.getY();
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    //////////////// FONCTIONS POUR LES REGLES DU JEU ///////////////
+    ///////////// les 3 premieres fonctions sont les principales pour le
+    //////////////// jeu///////////
+
+    // l'avantage du premier joueur au tout debut
     public void avantagePremierJoueur() {
         Joueur joueur = getJoueurActuel();
 
         if (fleurs.isEmpty())
-            return;
+            return; // on va verifier la liste des fleurs
 
         Fleur f = fleurs.get(random.nextInt(fleurs.size()));
         joueur.ajouterFleur(f);
         fleurs.remove(f);
     }
 
+    // pour placer un pion dans le cercle de jeu
     public boolean placePion(Pion pion, Coordonnees pos) {
 
         if (!peutPlacerPionDeType(pion.getType())) {
-            Configuration.debugeur("IMPOSSIBLE DE PLACER PLUS DE " + MAX_PIONS_PAR_JOUEUR + " PIONS DE CE TYPE : " + pion.getType());
+            setFeedbackMessage("Impossible : plus de pions de type " + pion.getType() + " disponibles.");
             return false;
         }
 
         if (!cercleDeJeu.contientPoint(pos)) {
-            Configuration.debugeur("PION HORS DU CERCLE : " + pos.getX() + ", " + pos.getY());
+            setFeedbackMessage("Impossible : le pion doit être placé à l'intérieur du cercle.");
             return false;
         }
 
         if (!positionLibrePourPion(pos)) {
-            Configuration.debugeur("POSITION NON APPROPRIEE : " + pos.getX() + ", " + pos.getY());
+            setFeedbackMessage("Impossible : la position est déjà occupée ou trop proche d'un autre pion.");
             return false;
         }
 
         pion.setPosition(pos);
+        setFeedbackMessage("Pion " + pion.getType() + " placé avec succès.");
         return true;
     }
 
+    // pour jouer un coup (controller appelle ça )
+    // c'est la premiere phase du jeu
     public void jouerCoup(Joueur joueur, Pion pion, Coordonnees pos, Fleur f1, Fleur f2) {
+
+          // si tous les pions sont placés
+          //pas besoin de  cette fonction ici car jouer coup est pour la premiere 
+          //phase du jeu
+        /*if (tousLesPionsPlaces()) {
+            attribuerFleursRestantes();// on attribue les fleurs restantes
+            return; // fin du jeu
+        }*/
+
 
         if (!placePion(pion, pos))
             return;
 
         if (!mangerFleurs(joueur, f1, f2)) {
-            pion.setPosition(null);
+            pion.setPosition(null); // on remet la position à null (car si on a passé la premiere condition, la
+                                    // position n'est pas null)
             return;
         }
 
-        if (tousLesPionsPlaces()) {
-            attribuerFleursRestantes();
-            return;
-        }
+        //ActionJeu action = new ActionJeu(pion, f1, f2, joueur);
+        //undoStack.push(action);
 
-        joueurSuivant();
+
+        joueurSuivant();// passons au joueur suivant
+
     }
 
+    //fonction pour la seconde phase du jeu (controller appelle ça aussi )
+    public boolean secondePhase(){
+      
+        if (tousLesPionsPlaces()) {
+            attribuerFleursRestantes();// on attribue les fleurs restantes
+            return true; // fin du jeu
+        }
+        return false;
+    }
+
+    /* ============= fonctions auxiliares ================= */
+
+    // on verifie si la position où on place le pion est libre
+    // A REVOIR
     private boolean positionLibrePourPion(Coordonnees pos) {
+        // on verifie qu'il y a une distance avec toutes les fleurs
+        /*
+         * for (Fleur f : fleurs) {
+         * if (distance(pos, f.getPosition()) < DIST_MIN_FLEURS) {
+         * return false;
+         * }
+         * }
+         */
+        // on verifie qu'il y a une distance aussi avec les pions
         for (Pion p : pions) {
             if (p.getPosition() != null && distance(pos, p.getPosition()) < DIST_MIN_FLEURS) {
                 return false;
@@ -323,22 +392,29 @@ public class Jeu {
         return true;
     }
 
+    // pour savoir si le joueur mange les fleurs ( mange et renvoie vrai si oui)
     public boolean mangerFleurs(Joueur joueur, Fleur f1, Fleur f2) {
+        // on verifie les type d'abord
         if (f1.getType() != f2.getType())
             return false;
-
+        // s'assrere que les fleurs sont dans le plateau (robustesse)
         if (!fleurs.contains(f1) || !fleurs.contains(f2))
             return false;
 
+        // le joueur mange les 2 fleurs
         joueur.ajouterFleur(f1);
         joueur.ajouterFleur(f2);
-
+        // les fleurs ne font plus partie du plateau
         fleurs.remove(f1);
         fleurs.remove(f2);
 
         return true;
     }
 
+    // attribuer les fleurs restantes ( après avoir joué , il se peut que le joueur
+    // suivant ai 2 fleurs)
+    // qui sont proche de lui, car des obstacles ont disparus sur le plateau, si on
+    // peut dire comme ça )
     public void attribuerFleursRestantes() {
 
         ArrayList<Fleur> copie = new ArrayList<>(fleurs);
@@ -352,6 +428,7 @@ public class Jeu {
         }
     }
 
+    // le joueur le plus proche
     private Joueur joueurLePlusProche(Fleur fleur) {
 
         Pion meilleur = null;
@@ -367,7 +444,7 @@ public class Jeu {
         }
 
         if (meilleur == null)
-            return null;
+            return null; // pas de joueur plus proche alors
 
         for (Joueur j : joueurs) {
             if (j.getTypePion() == meilleur.getType()) {
@@ -378,13 +455,18 @@ public class Jeu {
         return null;
     }
 
+    // verifie si tous les pions sont placés (type argent et or )
     private boolean tousLesPionsPlaces() {
-        for (Pion p : pions){
-            if(p.getPosition()==null) return false;
+        for (Pion p : pions) {
+            // le pion n'a pas de coordonnée, donc il n'est pas placé dans le plateau de jeu
+            if (p.getPosition() == null)
+                return false;
         }
         return true;
     }
 
+    ////////////////////////////// pour l'affichage
+    ////////////////////////////// ////////////////////////////////////////
     public void afficher() {
         Configuration.debugeur("Affichage du jeu : \n#");
         for (int i = 0; i < WIDTH; i++) {
@@ -425,91 +507,119 @@ public class Jeu {
         }
         Configuration.debugeur("#\n");
     }
+//////////////////////////////////////////////////////////////////////
 
     public boolean toucherFleur(Coordonnees pos) {
         for (Fleur f : fleurs) {
 
             if (distance(pos, f.getPosition()) < 10) {
 
+                // Phase de sélection d'avantage initial
                 if (enPhaseSelectionAvantage) {
                     appliquerAvantageAvecFleur(f);
+                    setFeedbackMessage("Avantage initial : " + getJoueurActuel().getNom() + " a choisi une fleur " + f.getType() + ".");
                     return true;
                 }
 
                 if (f == fleurSelectionnee1) {
                     fleurSelectionnee1 = null;
+                    setFeedbackMessage("Sélection annulée pour la première fleur.");
                     return true;
                 }
 
                 if (f == fleurSelectionnee2) {
                     fleurSelectionnee2 = null;
+                    setFeedbackMessage("Sélection annulée pour la seconde fleur.");
                     return true;
                 }
 
                 if (fleurSelectionnee1 == null) {
                     fleurSelectionnee1 = f;
+                    setFeedbackMessage("Première fleur sélectionnée : " + f.getType() + ".");
                     return true;
                 }
 
                 if (fleurSelectionnee2 == null) {
                     fleurSelectionnee2 = f;
+                    setFeedbackMessage("Seconde fleur sélectionnée : " + f.getType() + ".");
                     return true;
                 }
 
                 fleurSelectionnee1 = f;
                 fleurSelectionnee2 = null;
-
+                setFeedbackMessage("Nouvelle première fleur sélectionnée : " + f.getType() + ". Choisissez une seconde fleur.");
                 return true;
             }
         }
+        setFeedbackMessage("Aucune fleur touchée. Cliquez sur une fleur visible dans le cercle.");
         return false;
     }
 
     private boolean surSegment(Coordonnees A, Coordonnees B, Coordonnees C) {
 
-        int x1 = A.getX();
-        int y1 = A.getY();
-        int x2 = B.getX();
-        int y2 = B.getY();
-        int x = C.getX();
-        int y = C.getY();
+        double ax = A.getX();
+        double ay = A.getY();
+        double bx = B.getX();
+        double by = B.getY();
+        double cx = C.getX();
+        double cy = C.getY();
 
-        long det = Math.abs((long) (x2 - x1) * (y - y1) - (long) (y2 - y1) * (x - x1));
-        double distAB = distance(A, B);
+        // Vecteurs AB et AC
+        double abx = bx - ax;
+        double aby = by - ay;
 
-        if (distAB == 0)
+        double acx = cx - ax;
+        double acy = cy - ay;
+
+        // Produit scalaire pour projection
+        double ab2 = abx * abx + aby * aby;
+        if (ab2 == 0)
             return false;
 
-        double distanceC_AB = det / distAB;
-        if (distanceC_AB > 12)
+        double t = (acx * abx + acy * aby) / ab2;
+
+        // Vérifie si projection est sur le segment
+        if (t < 0 || t > 1)
             return false;
 
-        int marge = 5;
-        return x >= Math.min(x1, x2) - marge && x <= Math.max(x1, x2) + marge
-                && y >= Math.min(y1, y2) - marge && y <= Math.max(y1, y2) + marge;
+        // Point projeté sur AB
+        double px = ax + t * abx;
+        double py = ay + t * aby;
+
+        // Distance C -> segment
+        double dx = cx - px;
+        double dy = cy - py;
+
+        double distance = Math.sqrt(dx * dx + dy * dy);
+
+        // tolérance (rayon des pièces)
+        return distance <= 12;
     }
 
     private boolean segmentLibre(Coordonnees A, Coordonnees B) {
 
+        // Vérifier les fleurs comme obstacles
         for (Fleur f : fleurs) {
 
             Coordonnees C = f.getPosition();
 
+            // ignorer les extrémités (les fleurs sélectionnées)
             if (C.equals(A) || C.equals(B))
                 continue;
 
             if (surSegment(A, B, C)) {
-                return false;
+                return false; // obstacle trouvé
             }
         }
 
+        // Vérifier les pions comme obstacles
         for (Pion p : pions) {
             Coordonnees C = p.getPosition();
             if (C == null)
                 continue;
 
             if (surSegment(A, B, C)) {
-                return false;
+                return false; // un pion bloque le chemin
             }
         }
 
@@ -571,57 +681,192 @@ public class Jeu {
         return map;
     }
 
-    public void undo(){
-        if(!this.undoStack.isEmpty()){
+    public void undo() {
+        if (!this.undoStack.isEmpty()) {
             ActionJeu action = this.undoStack.pop();
-            action.pion.setPosition(null);
+            // Annuler l'action
+            if (action.pion != null) {
+                action.pion.setPosition(null); // Retirer le pion du plateau
+                joueurPrecedent();
+                setFeedbackMessage("Undo : le dernier pion a été retiré du plateau.");
+            } else {
+                // Annuler un avantage initial : remettre le jeu en phase de sélection
+                avantageInitialApplique = false;
+                enPhaseSelectionAvantage = true;
+                setFeedbackMessage("Undo : avantage initial annulé. Choisissez une nouvelle fleur.");
+            }
+
             if (action.f1 != null) {
-                action.joueur.getFleursGagnees().remove(action.f1);
-                fleurs.add(action.f1);
+                action.joueur.getFleursGagnees().remove(action.f1); // Retirer la fleur du joueur
+                fleurs.add(action.f1); // Remettre la fleur sur le plateau
             }
             if (action.f2 != null) {
-                action.joueur.getFleursGagnees().remove(action.f2);
-                fleurs.add(action.f2);
+                action.joueur.getFleursGagnees().remove(action.f2); // Retirer la fleur du joueur
+                fleurs.add(action.f2); // Remettre la fleur sur le plateau
             }
-            this.redoStack.push(action);
+            this.redoStack.push(action); // Ajouter l'action annulée à la pile de redo
+        } else {
+            setFeedbackMessage("Rien à annuler.");
         }
     }
 
-    public void redo(){
-        if(!this.redoStack.isEmpty()){
+    public void redo() {
+        if (!this.redoStack.isEmpty()) {
             ActionJeu action = this.redoStack.pop();
-            // Refaire l'action
-            if (placePion(action.pion, action.position)) { // Replacer le pion à la position sauvegardée
+            if (action.pion != null) {
+                // Refaire une action de placement de pion
+                if (placePion(action.pion, action.position)) { // Replacer le pion à la position sauvegardée
+                    if (action.f1 != null) {
+                        action.joueur.ajouterFleur(action.f1); // Retirer la fleur du plateau et la donner au joueur
+                        fleurs.remove(action.f1);
+                    }
+                    if (action.f2 != null) {
+                        action.joueur.ajouterFleur(action.f2); // Retirer la fleur du plateau et la donner au joueur
+                        fleurs.remove(action.f2);
+                    }
+                    joueurSuivant();
+                    setFeedbackMessage("Redo : le coup a été refait.");
+                    this.undoStack.push(action); // Ajouter l'action refaite à la pile d'undo
+                } else {
+                    setFeedbackMessage("Impossible de refaire l'action : placement du pion invalide.");
+                }
+            } else {
+                // Refaire un avantage initial
                 if (action.f1 != null) {
-                    action.joueur.ajouterFleur(action.f1); // Retirer la fleur du plateau et la donner au joueur
+                    action.joueur.ajouterFleur(action.f1);
                     fleurs.remove(action.f1);
                 }
                 if (action.f2 != null) {
-                    action.joueur.ajouterFleur(action.f2); // Retirer la fleur du plateau et la donner au joueur
+                    action.joueur.ajouterFleur(action.f2);
                     fleurs.remove(action.f2);
                 }
-                this.undoStack.push(action); // Ajouter l'action refaite à la pile d'undo
-            } else {
-                System.out.println("Impossible de refaire l'action : placement du pion invalide.");
+                avantageInitialApplique = true;
+                enPhaseSelectionAvantage = false;
+                setFeedbackMessage("Redo : avantage initial réappliqué.");
+                this.undoStack.push(action);
             }
+        } else {
+            setFeedbackMessage("Rien à refaire.");
         }
     }
 
     public void reset() {
         // Réinitialiser le jeu à son état initial
+        avantageInitialApplique = false;
+        enPhaseSelectionAvantage = false;
         initPlayers();
         initFleurs();
         initPions();
         demarrerPhaseSelectionAvantage();
         undoStack.clear();
         redoStack.clear();
+        setFeedbackMessage("Partie réinitialisée. Choisissez une fleur pour l'avantage initial.");
     }
+
+    public void placerPionDepuisDrag(Coordonnees pos, Object payload) {
+
+        if (payload == null)
+            return;
+
+        if (!(payload instanceof Types.TypePion)) {
+            System.out.println("Payload invalide");
+            return;
+        }
+
+        Types.TypePion type = (Types.TypePion) payload;
+        Joueur joueurActuel = getJoueurActuel();
+
+        if (joueurActuel.getTypePion() != type) {
+            System.out.println("Ce n'est pas le bon joueur !");
+            return;
+        }
+
+        Fleur[] flowers = trouverFleursPourPion(pos);
+        if (flowers == null) {
+            System.out.println("Placement invalide : pas entre deux fleurs compatibles !");
+            return;
+        }
+
+        Pion pion = new Pion(type, null);
+
+        jouerCoup(
+                joueurActuel,
+                pion,
+                pos,
+                flowers[0],
+                flowers[1]);
+
+        if (pion.getPosition() != null) {
+            pions.add(pion);
+        }
+
+        System.out.println("Pion placé via drag !");
+    }
+
+    private Fleur[] trouverFleursPourPion(Coordonnees pos) {
+        for (Types.TypeFleur typeFleur : Types.TypeFleur.values()) {
+            List<Fleur> deMemeType = new ArrayList<>();
+            for (Fleur f : fleurs) {
+                if (f.getType() == typeFleur) {
+                    deMemeType.add(f);
+                }
+            }
+
+            for (int i = 0; i < deMemeType.size(); i++) {
+                for (int j = i + 1; j < deMemeType.size(); j++) {
+                    Fleur f1 = deMemeType.get(i);
+                    Fleur f2 = deMemeType.get(j);
+
+                    if (estExactementAuMilieu(f1.getPosition(), f2.getPosition(), pos)) {
+                        if (fleursConnectées(f1, f2)) {
+                            return new Fleur[] { f1, f2 };
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean estExactementAuMilieu(Coordonnees A, Coordonnees B, Coordonnees C) {
+        double ax = A.getX();
+        double ay = A.getY();
+        double bx = B.getX();
+        double by = B.getY();
+        double cx = C.getX();
+        double cy = C.getY();
+
+        double abx = bx - ax;
+        double aby = by - ay;
+        double acx = cx - ax;
+        double acy = cy - ay;
+
+        double ab2 = abx * abx + aby * aby;
+        if (ab2 == 0)
+            return false;
+
+        double t = (acx * abx + acy * aby) / ab2;
+
+        // Doit être environ au milieu (t=0.5)
+        if (Math.abs(t - 0.5) > 0.1)
+            return false;
+
+        // Doit être sur la ligne (distance faible)
+        double p_x = ax + t * abx;
+        double p_y = ay + t * aby;
+        double dx = cx - p_x;
+        double dy = cy - p_y;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+
+        return distance <= 15;
+    }
+
 
     /*
      * public Fleur getFleurProche(Coordonnees pos, double distanceMax) {
      * Fleur best = null;
      * double min = Double.MAX_VALUE;
-     * 
+     *
      * for (Fleur f : fleurs) {
      * double d = distance(pos, f.getPosition());
      * if (d < min && d < distanceMax) {
@@ -631,26 +876,255 @@ public class Jeu {
      * }
      * return best;
      * }
-     * 
+     *
      * public Fleur getFleurAlignee(Fleur ref) {
-     * 
+     *
      * for (Fleur f : fleurs) {
-     * 
+     *
      * if (f == ref)
      * continue;
      * if (f.getType() != ref.getType())
      * continue;
-     * 
+     *
      * int dx = Math.abs(f.getPosition().getX() - ref.getPosition().getX());
      * int dy = Math.abs(f.getPosition().getY() - ref.getPosition().getY());
-     * 
+     *
      * // horizontal OU vertical
      * if (dx < 15 || dy < 15) {
      * return f;
      * }
      * }
-     * 
+     *
      * return null;
      * }
      */
+
+    // Sauvegarde l'état complet de la partie dans un fichier texte
+    public void sauvegarderPartie(String cheminFichier) {
+        try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(cheminFichier))) {
+
+            // idx de joueur actuel
+            writer.write("JOUEUR_ACTUEL:");
+            writer.newLine();
+            writer.write(String.valueOf(currentPlayerIndex));
+            writer.newLine();
+
+            // flags de phase (avantage initial)
+            writer.write("AVANTAGE:");
+            writer.newLine();
+            writer.write(avantageInitialApplique + " " + enPhaseSelectionAvantage);
+            writer.newLine();
+
+            // etat de chaque pion : type + position (ou null si non placé)
+            writer.write("PIONS:");
+            writer.newLine();
+            for (Pion p : pions) {
+                if (p.getPosition() == null) {
+                    writer.write(p.getType().name() + " null");
+                } else {
+                    writer.write(p.getType().name() + " " + p.getPosition().getX() + " " + p.getPosition().getY());
+                }
+                writer.newLine();
+            }
+
+            // fleurs encore prsentes sur le plateau
+            writer.write("FLEURS_PLATEAU:");
+            writer.newLine();
+            for (Fleur f : fleurs) {
+                writer.write(f.getType().name() + " " + f.getPosition().getX() + " " + f.getPosition().getY());
+                writer.newLine();
+            }
+
+            // fleurs collectés par chaque joueur 
+            writer.write("FLEURS_COLLECTEES:");
+            writer.newLine();
+            for (int i = 0; i < joueurs.length; i++) {
+                for (Fleur f : joueurs[i].getFleursGagnees()) {
+                    writer.write(i + " " + f.getType().name() + " " + f.getPosition().getX() + " " + f.getPosition().getY());
+                    writer.newLine();
+                }
+            }
+
+            // Pile undo (du bas vers le haut pour recharger dans le meme ordre)
+            writer.write("UNDO_STACK:");
+            writer.newLine();
+            List<ActionJeu> actions = new ArrayList<>(undoStack);
+            for (ActionJeu action : actions) {
+                // type et position du pion
+                String pionStr = action.pion.getType().name() + " "
+                        + action.position.getX() + " " + action.position.getY();
+
+                // fleur f1 (ou null)
+                String f1Str = (action.f1 == null) ? "null"
+                        : action.f1.getType().name() + " " + action.f1.getPosition().getX() + " " + action.f1.getPosition().getY();
+
+                // fleur f2 (ou null)
+                String f2Str = (action.f2 == null) ? "null"
+                        : action.f2.getType().name() + " " + action.f2.getPosition().getX() + " " + action.f2.getPosition().getY();
+
+                // index du joueur qui a effectue l'action
+                int joueurIndex = 0;
+                for (int i = 0; i < joueurs.length; i++) {
+                    if (joueurs[i] == action.joueur) {
+                        joueurIndex = i;
+                        break;
+                    }
+                }
+
+                writer.write(pionStr + " | " + f1Str + " | " + f2Str + " | " + joueurIndex);
+                writer.newLine();
+            }
+
+            Configuration.debugeur("Partie sauvegardée dans : %s\n", cheminFichier);
+
+        } catch (java.io.IOException e) {
+            Configuration.debugeurErreur("Erreur lors de la sauvegarde : %s\n", e.getMessage());
+        }
+    }
+
+    // Charge l'état d'une partie depuis un fichier texte et reconstruit le jeu
+    public void chargerPartie(String cheminFichier) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(cheminFichier))) {
+
+            // Remise à zéro de l'état courant
+            pions.clear();
+            fleurs.clear();
+            undoStack.clear();
+            redoStack.clear();
+            fleurSelectionnee1 = null;
+            fleurSelectionnee2 = null;
+            initPlayers(); // recrée les joueurs avec fleursGagnees vides
+
+            String ligne;
+            String section = "";
+
+            while ((ligne = reader.readLine()) != null) {
+                ligne = ligne.trim();
+                if (ligne.isEmpty()) continue;
+
+                // Détection des sections
+                if (ligne.equals("JOUEUR_ACTUEL:"))       { section = "JOUEUR_ACTUEL";       continue; }
+                if (ligne.equals("AVANTAGE:"))             { section = "AVANTAGE";             continue; }
+                if (ligne.equals("PIONS:"))                { section = "PIONS";                continue; }
+                if (ligne.equals("FLEURS_PLATEAU:"))       { section = "FLEURS_PLATEAU";       continue; }
+                if (ligne.equals("FLEURS_COLLECTEES:"))    { section = "FLEURS_COLLECTEES";    continue; }
+                if (ligne.equals("UNDO_STACK:"))           { section = "UNDO_STACK";           continue; }
+
+                switch (section) {
+
+                    case "JOUEUR_ACTUEL":
+                        currentPlayerIndex = Integer.parseInt(ligne);
+                        break;
+
+                    case "AVANTAGE": {
+                        String[] parts = ligne.split(" ");
+                        avantageInitialApplique  = Boolean.parseBoolean(parts[0]);
+                        enPhaseSelectionAvantage = Boolean.parseBoolean(parts[1]);
+                        break;
+                    }
+
+                    case "PIONS": {
+                        String[] parts = ligne.split(" ");
+                        Types.TypePion type = Types.TypePion.valueOf(parts[0]);
+                        Coordonnees pos = null;
+                        if (!parts[1].equals("null")) {
+                            pos = new Coordonnees(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+                        }
+                        pions.add(new Pion(type, pos));
+                        break;
+                    }
+
+                    case "FLEURS_PLATEAU": {
+                        String[] parts = ligne.split(" ");
+                        Types.TypeFleur type = Types.TypeFleur.valueOf(parts[0]);
+                        Coordonnees pos = new Coordonnees(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+                        fleurs.add(new Fleur(type, pos));
+                        break;
+                    }
+
+                    case "FLEURS_COLLECTEES": {
+                        String[] parts = ligne.split(" ");
+                        int joueurIndex = Integer.parseInt(parts[0]);
+                        Types.TypeFleur type = Types.TypeFleur.valueOf(parts[1]);
+                        Coordonnees pos = new Coordonnees(Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+                        joueurs[joueurIndex].ajouterFleur(new Fleur(type, pos));
+                        break;
+                    }
+
+                    case "UNDO_STACK": {
+                       
+                        String[] segments = ligne.split(" \\| ");
+                        if (segments.length < 4) break;
+
+                        // Lecture du pion
+                        String[] pionParts = segments[0].trim().split(" ");
+                        Types.TypePion pionType = Types.TypePion.valueOf(pionParts[0]);
+                        int px = Integer.parseInt(pionParts[1]);
+                        int py = Integer.parseInt(pionParts[2]);
+
+                        // Recherche du pion dans la liste par type et position
+                        Pion pion = null;
+                        for (Pion p : pions) {
+                            if (p.getType() == pionType && p.getPosition() != null
+                                    && p.getPosition().getX() == px && p.getPosition().getY() == py) {
+                                pion = p;
+                                break;
+                            }
+                        }
+                        if (pion == null) break; // pion introuvable, on ignore cette action
+
+                        // Index du joueur
+                        int joueurIndex = Integer.parseInt(segments[3].trim());
+                        Joueur joueur = joueurs[joueurIndex];
+
+                        // Lecture de f1 
+                        Fleur f1 = null;
+                        String seg1 = segments[1].trim();
+                        if (!seg1.equals("null")) {
+                            String[] f1Parts = seg1.split(" ");
+                            Types.TypeFleur f1Type = Types.TypeFleur.valueOf(f1Parts[0]);
+                            int f1x = Integer.parseInt(f1Parts[1]);
+                            int f1y = Integer.parseInt(f1Parts[2]);
+                            // Recherche dans les fleurs collectées du joueur
+                            for (Fleur f : joueur.getFleursGagnees()) {
+                                if (f.getType() == f1Type
+                                        && f.getPosition().getX() == f1x
+                                        && f.getPosition().getY() == f1y) {
+                                    f1 = f;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Lecture de f2 (peut être null)
+                        Fleur f2 = null;
+                        String seg2 = segments[2].trim();
+                        if (!seg2.equals("null")) {
+                            String[] f2Parts = seg2.split(" ");
+                            Types.TypeFleur f2Type = Types.TypeFleur.valueOf(f2Parts[0]);
+                            int f2x = Integer.parseInt(f2Parts[1]);
+                            int f2y = Integer.parseInt(f2Parts[2]);
+                            // Recherche dans les fleurs collectées du joueur
+                            for (Fleur f : joueur.getFleursGagnees()) {
+                                if (f.getType() == f2Type
+                                        && f.getPosition().getX() == f2x
+                                        && f.getPosition().getY() == f2y) {
+                                    f2 = f;
+                                    break;
+                                }
+                            }
+                        }
+
+                        undoStack.push(new ActionJeu(pion, f1, f2, joueur));
+                        break;
+                    }
+                }
+            }
+
+            Configuration.debugeur("Partie chargée depuis : %s\n", cheminFichier);
+
+        } catch (java.io.IOException e) {
+            Configuration.debugeurErreur("Erreur lors du chargement : %s\n", e.getMessage());
+        }
+    }
 }
